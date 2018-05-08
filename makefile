@@ -6,12 +6,13 @@ SRCS = clearptr.c newNode.c moveRight.c moveLeft.c getbfsrc.c printUsage.c
 HEADERS = $(MAINSRC:.c=.h)
 OBJS = $(MAINSRC:.c=.o) $(SRCS:.c=.o)
 
-.PHONY all clean
+.PHONY: all clean
 
 all: $(PROGRAM)
 
-$(OBJS): $(MAINSRC) $(SRCS) $(HEADERS)
+%.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
+
 $(PROGRAM): $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@
 
