@@ -1,5 +1,8 @@
 #include "bfci.h"
 
+/*  initTapes: Create instruction and data tapes
+ *
+ */
 TapesPtr initTapes(){
     TapesPtr retTape = malloc(sizeof(Tapes));
     if(retTape == NULL){
@@ -27,13 +30,19 @@ TapesPtr initTapes(){
     if(dataTp == NULL){
         return NULL;
     }
-    dataTp->minWrite = dataTp->maxWrite = dataTp->index = floor(dataTp->len/2);
+    dataTp->minWrite = dataTp->maxWrite = dataTp->index = dataTp->len/2;
 
     return retTape;
 }
 
+/*  initInsSet: Create instruciton set array
+ *
+ */
 InsSetPtr initInsSet(){
     InsSetPtr retSet = malloc(NoIS * sizeof(retSet));
+    if(retSet == NULL){
+        return NULL;
+    }
 
     retSet[E_MV_R]  =  MV_R;
     retSet[E_MV_L]  =  MV_L;
@@ -47,14 +56,25 @@ InsSetPtr initInsSet(){
     return retSet;
 }
 
+/*  isInstruction: Checks if given input c is valid instruction in InsSet
+ *
+ *  @c: Possible instruction
+ *  @InsSet: instruction set array initalized by initInsSet()
+ */
 int isInstruction(int c, InsSetPtr InsSet){
-    for(int i = 0; i < NoIS-1; i++){
-        if(c == InsSet[i]) return i;
+    for(int i = 0; i < NoIS; i++){
+        if(c == InsSet[i]){
+            return i;
+        }
     }
 
     return FALSE;
 }
 
+/*  freeTapes: Frees memory allocated for tapes
+ *
+ *  @tape: Tapes, initialized by initTapes(), to cleanup
+ */
 void freeTapes(TapesPtr tape){
    free(tape->ins.tape);
    tape->ins.tape = NULL;
@@ -64,6 +84,10 @@ void freeTapes(TapesPtr tape){
    tape = NULL;
 }
 
+/*  printData: Shows the data in the range over which instructions operated 
+ *
+ *  @tape: Tape structure which data to print
+ */
 int printData(TapesPtr tape){
     if(tape == NULL){
         return FAIL;
@@ -72,7 +96,7 @@ int printData(TapesPtr tape){
     DataTapePtr dataTp = &tape->data;
     unsigned int min = dataTp->minWrite;
     unsigned int max = dataTp->maxWrite;
-    unsigned int middle = floor(dataTp->len/2);
+    unsigned int middle = dataTp->len/2;
 
     for(int i = min; i<=max; i++){
         printf("dataTp->tape[%u] = %d\n", i-middle, dataTp->tape[i]);
@@ -80,143 +104,33 @@ int printData(TapesPtr tape){
     return SUCCESS;
 }
 
-int changeval(Tapes tape){
-    switch(ins_cell){
-        /* Increment value */
-        case '+':
-            if(*d_tape + 1 > CELLMAX){
-                return OVERFLOW;
-            }
-
-            *d_tape++;
-            break;
-        /* Decrement value */
-        case '-':
-            if(*d_tape - 1 < 0){
-                return UNDERFLOW;
-            }
-            *d_tape--;
-            break;
-        /* Undefined instruction */
-        default :
-            return NDFINS;    
-    }
-    return SUCCESS;
-}
-
 /*
- * getsrc: Gets all instructions from Brainfuck source file and saves them into ins_tape array
- * 
- * @source: Input file containing Brainfuck source code
- * @ins_tape: Output array which will be set to contain instructions
- * @length: Output number of elements in ins_ptr
- */
-
-int getsrc(const char *source, Tapes tape ){
-    FILE *src_file;
-    int c;
-    unsigned long int i = 0;
-
-    src_file = fopen(source, "r");
-    if(src_file == NULL){
-        return FILEFAIL;
-    }
-
-    while((c = getc(src_file)) != EOF){
-        if(isINSTRUCTION(c)){ 
-            if(i > tape.ins){
-                *inst_len = i;
-                ins_tape = (cell*) realloc(ins_tape, *inst_len);
-                if(ins_tape == NULL){
-                    return ALLOCFAIL;
-                }
-            
-            }
-            ins_tape[i] = (cell) c;
-            i++;
-        }
-    }
-    
-    
-    
-    fclose(src_file);
-    return SUCCESS; 
-}
-
-/*
- * IO: Takes care of input/output of data tape d_tape array
  *
- * @ins_cell: Input instruction that specifies either input or output of cell d_tape points on
- * @d_tape: Input data tape pointer pointing to cell which value will be either outputed to stdout or overwritten
- * 
- */
-
-
-int IO(cell ins_cell, cell *d_tape){
-    
-    switch(ins_cell){
-        
-        /* Output */
-        case '.':
-            putc(*d_tape, stdout);
-            break;
-
-        /* Input */
-        case ',':
-            *d_tape = getc(stdin);
-            break;
-        default :
-            return NDFINS;    
-    }
-    
-    return SUCCESS;
-}
-
-/*
- * move: Moves data tape pointer d_tape according to given instruction ins_cell
  *
- * @ins_cell: Input instruction that specifies either increment or decrement operation
- * @d_tape: Input/Output data tape which contains data over which instructions operate
- * @dt_index: Input index of current cell in data tape used to error check if we surpassed the limit of data tape length
- * @dt_len: Input/Output number of elements that data tape array d_tape contains
  */
+//int saveIns(TapesPtr tape){}
 
-int move(cell ins_cell, cell *d_tape, unsigned long int *dt_index, unsigned long int *dt_len){
+/*  changeval: Changes value of data according to given instruction
+ *
+ *  @tape: Tape structure which data tape cell will be incremented/decremented
+ */
+//int changeval(Tapes tape){}
 
-    switch(ins_cell){
-        
-        /* Move right */ 
-        case '>':
-            if(*dt_index + 1 > *dt_len){
-                if(*dt_index + 1 > DTMAXLEN){
-                    return OVERFLOW;
-                }
-        
-                *dt_len++;
-                d_tape = (cell*) realloc(d_tape, *dt_len);
-                if(d_tape == NULL){
-                    return ALLOCFAIL;
-                 }
-            }
-            *dt_index++;
-            d_tape++;
-            *d_tape = 0;
-            break;
+/*  getsrc: Encodes instructions from Brainfuck source file into instruction tape
+ * 
+ *  @source: Filename of Brainfuck source file
+ *  @tape: Tape structure in which the encoded instructions will be stored
+ */
+//int getsrc(const char *source, Tapes tape ){}
 
-        /* Move left */ 
-        case '<':
-            if(dt_index - 1 < 0){
-                return UNDERFLOW;
-            }
-            *dt_index--;
-            d_tape--;
-            break;
+/*  IO: Takes care of input/output of data tape
+ *
+ *  @tape: Tape structure which data tape will be manipulated over STDIO
+ */
+//int IO(Tapes tape){}
 
-        /* Undefined instruction */         
-        default :
-            return NDFINS;
-    }
-    
-    return SUCCESS;
-}
-
+/*  move: Moves data tape according to given instruction(left, right)
+ *
+ *  @tape: Tape structure containing data tape
+ */
+//int move(Tapes tape){}

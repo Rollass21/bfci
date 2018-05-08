@@ -1,11 +1,12 @@
 # bfci
-BrainFuck C Interpreter
+BrainF*ck C Interpreter
 
 # Why?
 Learning purposes.
 
-Recently i found out about this excellent programming language called [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck)
-and figured that doing something like this could teach me some new things.
+Recently I found out about this excellent, magnificent and most of all easy to 
+understand programming language called [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck) 
+and figured that doing something like this could help me learn some new things.
 
 :)
 

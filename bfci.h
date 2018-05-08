@@ -1,11 +1,9 @@
 #ifndef BFCI_H
-#define BFCI_H
-
+#define BFCI_H 
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
 
-/* CONST DEFINITIONS */
+/* VALUE DEFINITIONS */
 #define SUCCESS 0
 #define FAIL -1
 #define TRUE 0
@@ -47,12 +45,6 @@
 
 #define NoIS 8 // Number of InstructionS avaiable
 
-
-#define isINSTRUCTION(c) (\
-                          (c==MV_R) || (c==MR_L) || (c==INC) || (c==DEC) ||  \
-                          (c==STD_O) || (c==STD_I) || (c==WHILE) || (c==END) \
-                         )\
-
 /* DATA TYPES DEFINITION */
 /* INSTRUCTION SET ARRAY */
 typedef int *InsSetPtr;
@@ -61,18 +53,20 @@ typedef int *InsSetPtr;
 typedef struct _DataTape DataTape;
 typedef DataTape *DataTapePtr;
 struct _DataTape{
-    unsigned int index;
     unsigned char *tape;
-    unsigned int len;
+    unsigned int index,
+                 len,
+                 maxWrite,
+                 minWrite;
 };
 
 /* INSTRUCTION TAPE */
 typedef struct _InsTape InsTape;
 typedef InsTape *InsTapePtr;
 struct _InsTape{
-    unsigned int index;
     int *tape;
-    unsigned int len;
+    unsigned int index,
+                 len;
 };
 
 /* TAPES */
@@ -84,14 +78,10 @@ struct _Tapes{
 };
 
 /* FUNCTION DECLARATION */
-int getsrc(const char *source, Tapes tape);
-int move(Tapes tape);
-int changeval(Tapes tape);
-int IO(Tapes tape);
 TapesPtr initTapes();
+InsSetPtr initInsSet();
+int isInstruction(int c, InsSetPtr InsSet);
 void freeTapes(TapesPtr tape){
 int printData(TapesPtr tape){
-int isInstruction(inc c; InsSetPtr InsSet);
-InsSetPtr initInsSet();
 
 #endif

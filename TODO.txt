@@ -1,5 +1,0 @@
-# Makefile
-# Stack for nested file loops
-# Tape for data manipulation (30k bytes dynamic array)
-# Character/Command recognition 
-# to-C translator
