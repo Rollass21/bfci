@@ -81,7 +81,7 @@ struct _Tapes{
 TapesPtr initTapes();
 InsSetPtr initInsSet();
 int isInstruction(int c, InsSetPtr InsSet);
-void freeTapes(TapesPtr tape){
-int printData(TapesPtr tape){
+void freeTapes(TapesPtr tape);
+int printData(TapesPtr tape);
 
 #endif
