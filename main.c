@@ -21,6 +21,9 @@ int main(int argc, const char *argv[]){
     }
     getsrc(source, tapes, insset);
 
+    changeval(tapes);
+    changeval(tapes);
+
     printDiagnostics(tapes, insset);
     
     freeTapes(tapes);

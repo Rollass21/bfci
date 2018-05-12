@@ -190,6 +190,7 @@ int getsrc(const char *source, TapesPtr tape, InsSetPtr insset){
         }
     }
     tape->ins->usedlen = tape->ins->index;
+    tape->ins->index = 0;
 
     fclose(src_file);
     return SUCCESS;
@@ -199,7 +200,34 @@ int getsrc(const char *source, TapesPtr tape, InsSetPtr insset){
  *
  *  @tape: Tape structure which data tape cell will be incremented/decremented
  */
-//int changeval(Tapes tape){}
+int changeval(TapesPtr tape){
+    if(tape == NULL){
+        return FAIL;
+    }
+    InsTapePtr insTp = tape->ins;
+    DataTapePtr dataTp = tape->data;
+
+    switch(insTp->tape[insTp->index]){
+        case INC:
+            if(dataTp->tape[dataTp->index]+1 > DATAMAX){
+                return OVERFLOW;
+            }
+            dataTp->tape[dataTp->index]++;
+            break;
+
+        case DEC:
+            if(dataTp->tape[dataTp->index]-1 < DATAMIN){
+                return UNDERFLOW;
+            }
+            dataTp->tape[dataTp->index]--;
+            break;
+
+        default:
+            return NDFINS;
+    }
+
+    return SUCCESS;
+}
 
 /*  IO: Takes care of input/output of data tape
  *
@@ -212,5 +240,7 @@ int getsrc(const char *source, TapesPtr tape, InsSetPtr insset){
  *  @tape: Tape structure containing data tape
  */
 //int move(Tapes tape){}
+
+//run(){}
 
 

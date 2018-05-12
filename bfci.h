@@ -75,5 +75,6 @@ InsSetPtr initInsSet();
 void freeTapes(TapesPtr tape);
 void printDiagnostics(TapesPtr tape, InsSetPtr innset);
 int getsrc(const char *source, TapesPtr tape, InsSetPtr insset);
+int changeval(TapesPtr tape);
 
 #endif
