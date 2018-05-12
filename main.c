@@ -4,28 +4,30 @@ int main(int argc, const char *argv[]){
     TapesPtr tapes = initTapes();
     if(tapes == NULL){
         fprintf(stderr, "Error allocating memory! (initTapes)\n");
-        return 0;
+        return ALLOCFAIL;
     } 
     InsSetPtr insset = initInsSet();
     if(insset == NULL){
         fprintf(stderr, "Error allocating memory! (initInsSet)\n");
+        return ALLOCFAIL;
     }
 
-    printf("tapes->ins.len = %u\n", tapes->ins.len);
-    printf("tapes->ins.index = %u\n", tapes->ins.index);
-    printf("tapes->data.len = %u\n", tapes->ins.len);
-    printf("tapes->data.index = %u\n", tapes->ins.index);
-
-    printData(tapes);
-
-    if(isInstruction(MV_R, insset) != FALSE){
-        printf("isInstruction works!\n");        
+    int c = MV_L;
+    if(isInstruction(c, insset) != FALSE){
+        saveIns(c, tapes);
     }
 
+    c = MV_R;
+    if(isInstruction(c, insset) != FALSE){
+        saveIns(c, tapes);
+    }
+
+    printDiagnostics(tapes, insset);
+    
     freeTapes(tapes);
     if(tapes == NULL){
         printf("cleanup done!\n");
     }
 
-    return 0;
+    return SUCCESS;
 }

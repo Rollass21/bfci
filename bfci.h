@@ -33,17 +33,8 @@
 #define WHILE '['
 #define   END ']'
 
-/* ENCODED ISNTRUCTION SET */
-#define  E_MV_R 0
-#define  E_MV_L 1
-#define   E_INC 2
-#define   E_DEC 3
-#define E_STD_O 4
-#define E_STD_I 5
-#define E_WHILE 6
-#define   E_END 7
-
-#define NoIS 8 // Number of InstructionS avaiable
+/* INStruction Set LENgth */
+#define  INSSLEN 8
 
 /* DATA TYPES DEFINITION */
 /* INSTRUCTION SET ARRAY */
@@ -80,8 +71,9 @@ struct _Tapes{
 /* FUNCTION DECLARATION */
 TapesPtr initTapes();
 InsSetPtr initInsSet();
-int isInstruction(int c, InsSetPtr InsSet);
+int isInstruction(int c, InsSetPtr insset);
 void freeTapes(TapesPtr tape);
-int printData(TapesPtr tape);
+int saveIns(int E_c, TapesPtr tape);
+void printDiagnostics(TapesPtr tape, InsSetPtr innset);
 
 #endif

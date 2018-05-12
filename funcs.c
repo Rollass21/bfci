@@ -23,7 +23,6 @@ TapesPtr initTapes(){
     /* Data tape initialization */
     dataTp->len = DTMAXLEN;
 
-
     //q:Would it be faster to just malloc and zero the tape cell only after reaching it?
     //a:Yes. I guess.
     dataTp->tape = calloc(dataTp->len, sizeof(*dataTp->tape));
@@ -39,31 +38,32 @@ TapesPtr initTapes(){
  *
  */
 InsSetPtr initInsSet(){
-    InsSetPtr retSet = malloc(NoIS * sizeof(retSet));
+    InsSetPtr retSet = malloc(INSSLEN * sizeof(retSet));
     if(retSet == NULL){
         return NULL;
     }
 
-    retSet[E_MV_R]  =  MV_R;
-    retSet[E_MV_L]  =  MV_L;
-    retSet[E_INC]   =   INC;
-    retSet[E_DEC]   =   DEC;
-    retSet[E_STD_O] = STD_O;
-    retSet[E_STD_I] = STD_I;
-    retSet[E_WHILE] = WHILE;
-    retSet[E_END]   =   END;
+    retSet[0] =  MV_R;
+    retSet[1] =  MV_L;
+    retSet[2] =   INC;
+    retSet[3] =   DEC;
+    retSet[4] = STD_O;
+    retSet[5] = STD_I;
+    retSet[6] = WHILE;
+    retSet[7] =   END;
 
     return retSet;
 }
 
-/*  isInstruction: Checks if given input c is valid instruction in InsSet
+/*  isInstruction: Checks if given input c is valid instruction in InsSet, if is
+ *                 then returns encoded value of given instruction
  *
  *  @c: Possible instruction
  *  @InsSet: instruction set array initalized by initInsSet()
  */
-int isInstruction(int c, InsSetPtr InsSet){
-    for(int i = 0; i < NoIS; i++){
-        if(c == InsSet[i]){
+int isInstruction(int c, InsSetPtr insset){
+    for(int i = 0; i < INSSLEN; i++){
+        if(c == insset[i]){
             return i;
         }
     }
@@ -84,13 +84,10 @@ void freeTapes(TapesPtr tape){
    tape = NULL;
 }
 
-/*  printData: Shows the data in the range over which instructions operated 
- *
- *  @tape: Tape structure which data to print
- */
+static
 int printData(TapesPtr tape){
     if(tape == NULL){
-        return FAIL;
+        return SUCCESS;
     }
 
     DataTapePtr dataTp = &tape->data;
@@ -104,11 +101,58 @@ int printData(TapesPtr tape){
     return SUCCESS;
 }
 
+static
+int printIns(TapesPtr tape, InsSetPtr insset){
+    if(tape == NULL){
+        return SUCCESS;
+    }
+
+    InsTapePtr insTp = &tape->ins;
+    
+    for(int i = 0; i < insTp->len; i++){
+        printf("insTp->tape[%u] = %c\n", i, insTp->tape[i]);
+    }
+
+    return SUCCESS;
+}
+
 /*
  *
  *
  */
-//int saveIns(TapesPtr tape){}
+int saveIns(int c, TapesPtr tape){
+    if(tape == NULL){
+        return NDFUSAGE;
+    }
+
+    InsTapePtr insTp = &tape->ins;
+
+    if(insTp->index + 1 > insTp->len){
+        insTp->len += ALLOCJMP;
+        size_t insSize = insTp->len * sizeof(*insTp->tape);
+
+        insTp->tape = realloc(insTp->tape, insSize);
+        if(insTp->tape == NULL){
+            return ALLOCFAIL;
+        }
+    }
+
+    insTp->tape[insTp->index++] = c;
+    return SUCCESS;
+}
+
+void printDiagnostics(TapesPtr tape, InsSetPtr insset){
+    printf("Instruction Tape\n");
+    printf("ins->len = %u\n", tape->ins.len);
+    printf("ins->index = %u\n", tape->ins.index);
+    printIns(tape, insset);
+
+    printf("\nData Tape\n");
+    printf("data->len = %u\n", tape->data.len);
+    printf("data->index = %u\n", tape->data.index);
+    printData(tape);
+    printf("\n");
+}
 
 /*  changeval: Changes value of data according to given instruction
  *

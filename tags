@@ -1,0 +1,68 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+ALLOCFAIL	bfci.h	21;"	d
+ALLOCJMP	bfci.h	13;"	d
+BFCI_H	bfci.h	2;"	d
+CC	makefile	/^CC = gcc # compiler used: gcc$/;"	m
+CFLAGS	makefile	/^CFLAGS = -O0 -ggdb -Wall -Werror$/;"	m
+DATAMAX	bfci.h	11;"	d
+DATAMIN	bfci.h	12;"	d
+DEC	bfci.h	30;"	d
+DTMAXLEN	bfci.h	14;"	d
+DataTape	bfci.h	/^typedef struct _DataTape DataTape;$/;"	t	typeref:struct:_DataTape
+DataTapePtr	bfci.h	/^typedef DataTape *DataTapePtr;$/;"	t
+END	bfci.h	34;"	d
+FAIL	bfci.h	8;"	d
+FALSE	bfci.h	10;"	d
+FILEFAIL	bfci.h	22;"	d
+HEADERS	makefile	/^HEADERS = bfci.h # .h files$/;"	m
+INC	bfci.h	29;"	d
+INSSLEN	bfci.h	37;"	d
+InsSetPtr	bfci.h	/^typedef int *InsSetPtr;$/;"	t
+InsTape	bfci.h	/^typedef struct _InsTape InsTape;$/;"	t	typeref:struct:_InsTape
+InsTapePtr	bfci.h	/^typedef InsTape *InsTapePtr;$/;"	t
+MAINSRC	makefile	/^MAINSRC = main.c # main source file, in most cases main.c$/;"	m
+MV_L	bfci.h	28;"	d
+MV_R	bfci.h	27;"	d
+NDFINS	bfci.h	23;"	d
+NDFUSAGE	bfci.h	24;"	d
+NOLOOPEND	bfci.h	19;"	d
+NOLOOPSTART	bfci.h	20;"	d
+OBJS	makefile	/^OBJS = ${SRCS:.c=.o} $(MAINSRC:.c=.o)$/;"	m
+OVERFLOW	bfci.h	17;"	d
+PROGRAM	makefile	/^PROGRAM = bfci # name of executable$/;"	m
+SRCS	makefile	/^SRCS = funcs.c # .c files containing funcs$/;"	m
+STD_I	bfci.h	32;"	d
+STD_O	bfci.h	31;"	d
+SUCCESS	bfci.h	7;"	d
+TRUE	bfci.h	9;"	d
+Tapes	bfci.h	/^typedef struct _Tapes Tapes;$/;"	t	typeref:struct:_Tapes
+TapesPtr	bfci.h	/^typedef Tapes *TapesPtr;$/;"	t
+UNDERFLOW	bfci.h	18;"	d
+WHILE	bfci.h	33;"	d
+_DataTape	bfci.h	/^struct _DataTape{$/;"	s
+_InsTape	bfci.h	/^struct _InsTape{$/;"	s
+_Tapes	bfci.h	/^struct _Tapes{$/;"	s
+data	bfci.h	/^    DataTape data;$/;"	m	struct:_Tapes
+freeTapes	funcs.c	/^void freeTapes(TapesPtr tape){$/;"	f
+index	bfci.h	/^    unsigned int index,$/;"	m	struct:_DataTape
+index	bfci.h	/^    unsigned int index,$/;"	m	struct:_InsTape
+initInsSet	funcs.c	/^InsSetPtr initInsSet(){$/;"	f
+initTapes	funcs.c	/^TapesPtr initTapes(){$/;"	f
+ins	bfci.h	/^    InsTape ins;$/;"	m	struct:_Tapes
+isInstruction	funcs.c	/^int isInstruction(int c, InsSetPtr insset){$/;"	f
+len	bfci.h	/^                 len,$/;"	m	struct:_DataTape
+len	bfci.h	/^                 len;$/;"	m	struct:_InsTape
+main	main.c	/^int main(int argc, const char *argv[]){$/;"	f
+maxWrite	bfci.h	/^                 maxWrite,$/;"	m	struct:_DataTape
+minWrite	bfci.h	/^                 minWrite;$/;"	m	struct:_DataTape
+printData	funcs.c	/^int printData(TapesPtr tape){$/;"	f	file:
+printDiagnostics	funcs.c	/^void printDiagnostics(TapesPtr tape, InsSetPtr insset){$/;"	f
+printIns	funcs.c	/^int printIns(TapesPtr tape, InsSetPtr insset){$/;"	f	file:
+saveIns	funcs.c	/^int saveIns(int c, TapesPtr tape){$/;"	f
+tape	bfci.h	/^    int *tape;$/;"	m	struct:_InsTape
+tape	bfci.h	/^    unsigned char *tape;$/;"	m	struct:_DataTape
