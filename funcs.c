@@ -13,6 +13,7 @@ InsTapePtr initInsTape(){
         return NULL;
     }
     retInsTp->index = 0;
+    retInsTp->usedlen = 0;
 
     return retInsTp;
 }
@@ -63,7 +64,7 @@ InsSetPtr initInsSet(){
     if(retSet == NULL){
         return NULL;
     }
-retSet[0] =  MV_R;
+    retSet[0] =  MV_R;
     retSet[1] =  MV_L;
     retSet[2] =   INC;
     retSet[3] =   DEC;
@@ -79,15 +80,15 @@ retSet[0] =  MV_R;
  *                 then returns encoded value of given instruction
  *
  *  @c: Possible instruction
- *  @InsSet: instruction set array initalized by initInsSet()
+ *  @insset: instruction set array initalized by initInsSet()
  */
+static
 int isInstruction(int c, InsSetPtr insset){
     for(int i = 0; i < INSSLEN; i++){
         if(c == insset[i]){
-            return i;
+            return TRUE;
         }
     }
-
     return FALSE;
 }
 
@@ -126,20 +127,17 @@ int printIns(TapesPtr tape, InsSetPtr insset){
     if(tape == NULL){
         return SUCCESS;
     }
-
     InsTapePtr insTp = tape->ins;
     
     for(int i = 0; i < insTp->len; i++){
-        printf("insTp->tape[%u] = %c\n", i, insTp->tape[i]);
+        printf("%c", insTp->tape[i]);
     }
+    printf("\n");
 
     return SUCCESS;
 }
 
-/*
- *
- *
- */
+static
 int saveIns(int c, TapesPtr tape){
     if(tape == NULL){
         return NDFUSAGE;
@@ -177,8 +175,25 @@ void printDiagnostics(TapesPtr tape, InsSetPtr insset){
  * 
  *  @source: Filename of Brainfuck source file
  *  @tape: Tape structure in which the instructions will be stored
+ *  @insset Instruction set array used to identify instructions
  */
-// int getsrc(const char source*){}
+int getsrc(const char *source, TapesPtr tape, InsSetPtr insset){
+    int c;
+    FILE *src_file = fopen(source, "r");
+    if(src_file == NULL){
+        return FILEFAIL;
+    }
+
+    while((c = getc(src_file)) != EOF){
+        if(isInstruction(c, insset) == TRUE){
+            saveIns(c, tape);
+        }
+    }
+    tape->ins->usedlen = tape->ins->index;
+
+    fclose(src_file);
+    return SUCCESS;
+}
 
 /*  changeval: Changes value of data according to given instruction
  *

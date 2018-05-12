@@ -57,6 +57,7 @@ typedef InsTape *InsTapePtr;
 struct _InsTape{
     int *tape;
     unsigned int index,
+                 usedlen,
                  len;
 };
 
@@ -71,9 +72,8 @@ struct _Tapes{
 /* FUNCTION DECLARATION */
 TapesPtr initTapes();
 InsSetPtr initInsSet();
-int isInstruction(int c, InsSetPtr insset);
 void freeTapes(TapesPtr tape);
-int saveIns(int E_c, TapesPtr tape);
 void printDiagnostics(TapesPtr tape, InsSetPtr innset);
+int getsrc(const char *source, TapesPtr tape, InsSetPtr insset);
 
 #endif

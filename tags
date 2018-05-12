@@ -47,13 +47,15 @@ WHILE	bfci.h	33;"	d
 _DataTape	bfci.h	/^struct _DataTape{$/;"	s
 _InsTape	bfci.h	/^struct _InsTape{$/;"	s
 _Tapes	bfci.h	/^struct _Tapes{$/;"	s
-data	bfci.h	/^    DataTape data;$/;"	m	struct:_Tapes
+data	bfci.h	/^    DataTapePtr data;$/;"	m	struct:_Tapes
 freeTapes	funcs.c	/^void freeTapes(TapesPtr tape){$/;"	f
 index	bfci.h	/^    unsigned int index,$/;"	m	struct:_DataTape
 index	bfci.h	/^    unsigned int index,$/;"	m	struct:_InsTape
+initDataTape	funcs.c	/^DataTapePtr initDataTape(){$/;"	f	file:
 initInsSet	funcs.c	/^InsSetPtr initInsSet(){$/;"	f
+initInsTape	funcs.c	/^InsTapePtr initInsTape(){$/;"	f	file:
 initTapes	funcs.c	/^TapesPtr initTapes(){$/;"	f
-ins	bfci.h	/^    InsTape ins;$/;"	m	struct:_Tapes
+ins	bfci.h	/^    InsTapePtr ins;$/;"	m	struct:_Tapes
 isInstruction	funcs.c	/^int isInstruction(int c, InsSetPtr insset){$/;"	f
 len	bfci.h	/^                 len,$/;"	m	struct:_DataTape
 len	bfci.h	/^                 len;$/;"	m	struct:_InsTape
