@@ -64,8 +64,8 @@ struct _InsTape{
 typedef struct _Tapes Tapes;
 typedef Tapes *TapesPtr;
 struct _Tapes{
-    InsTape ins;
-    DataTape data;
+    InsTapePtr ins;
+    DataTapePtr data;
 };
 
 /* FUNCTION DECLARATION */

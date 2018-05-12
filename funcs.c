@@ -1,5 +1,39 @@
 #include "bfci.h"
 
+static
+InsTapePtr initInsTape(){
+    InsTapePtr retInsTp = malloc(sizeof(InsTape));
+    if(retInsTp == NULL){
+        return NULL;
+    }
+
+    retInsTp->len = 1;
+    retInsTp->tape = malloc(retInsTp->len * sizeof(*retInsTp->tape));
+    if(retInsTp->tape == NULL){
+        return NULL;
+    }
+    retInsTp->index = 0;
+
+    return retInsTp;
+}
+
+static
+DataTapePtr initDataTape(){
+    DataTapePtr retDataTp = malloc(sizeof(DataTape));
+    if(retDataTp == NULL){
+        return NULL;
+    }
+
+    retDataTp->len = DTMAXLEN;
+    retDataTp->tape = calloc(retDataTp->len, sizeof(*retDataTp->tape));
+    if(retDataTp == NULL){
+        return NULL;
+    }
+    retDataTp->minWrite = retDataTp->maxWrite = retDataTp->index = retDataTp->len/2;
+
+    return retDataTp;
+}
+
 /*  initTapes: Create instruction and data tapes
  *
  */
@@ -8,28 +42,15 @@ TapesPtr initTapes(){
     if(retTape == NULL){
         return NULL;
     }
-    
-    InsTapePtr insTp = &retTape->ins;
-    DataTapePtr dataTp = &retTape->data;
-
-    /* Instruction tape initialization */
-    insTp->len = 1;
-    insTp->tape = malloc(insTp->len * sizeof(*insTp->tape));
-    if(insTp->tape == NULL){
+    retTape->ins = initInsTape();
+    if(retTape->ins == NULL){
         return NULL;
     }
-    insTp->index = 0;
     
-    /* Data tape initialization */
-    dataTp->len = DTMAXLEN;
-
-    //q:Would it be faster to just malloc and zero the tape cell only after reaching it?
-    //a:Yes. I guess.
-    dataTp->tape = calloc(dataTp->len, sizeof(*dataTp->tape));
-    if(dataTp == NULL){
+    retTape->data = initDataTape();
+    if(retTape->data == NULL){
         return NULL;
     }
-    dataTp->minWrite = dataTp->maxWrite = dataTp->index = dataTp->len/2;
 
     return retTape;
 }
@@ -42,8 +63,7 @@ InsSetPtr initInsSet(){
     if(retSet == NULL){
         return NULL;
     }
-
-    retSet[0] =  MV_R;
+retSet[0] =  MV_R;
     retSet[1] =  MV_L;
     retSet[2] =   INC;
     retSet[3] =   DEC;
@@ -76,10 +96,10 @@ int isInstruction(int c, InsSetPtr insset){
  *  @tape: Tapes, initialized by initTapes(), to cleanup
  */
 void freeTapes(TapesPtr tape){
-   free(tape->ins.tape);
-   tape->ins.tape = NULL;
-   free(tape->data.tape);
-   tape->data.tape = NULL;
+   free(tape->ins->tape);
+   tape->ins->tape = NULL;
+   free(tape->data->tape);
+   tape->data->tape = NULL;
    free(tape);
    tape = NULL;
 }
@@ -90,7 +110,7 @@ int printData(TapesPtr tape){
         return SUCCESS;
     }
 
-    DataTapePtr dataTp = &tape->data;
+    DataTapePtr dataTp = tape->data;
     unsigned int min = dataTp->minWrite;
     unsigned int max = dataTp->maxWrite;
     unsigned int middle = dataTp->len/2;
@@ -107,7 +127,7 @@ int printIns(TapesPtr tape, InsSetPtr insset){
         return SUCCESS;
     }
 
-    InsTapePtr insTp = &tape->ins;
+    InsTapePtr insTp = tape->ins;
     
     for(int i = 0; i < insTp->len; i++){
         printf("insTp->tape[%u] = %c\n", i, insTp->tape[i]);
@@ -125,7 +145,7 @@ int saveIns(int c, TapesPtr tape){
         return NDFUSAGE;
     }
 
-    InsTapePtr insTp = &tape->ins;
+    InsTapePtr insTp = tape->ins;
 
     if(insTp->index + 1 > insTp->len){
         insTp->len += ALLOCJMP;
@@ -143,29 +163,28 @@ int saveIns(int c, TapesPtr tape){
 
 void printDiagnostics(TapesPtr tape, InsSetPtr insset){
     printf("Instruction Tape\n");
-    printf("ins->len = %u\n", tape->ins.len);
-    printf("ins->index = %u\n", tape->ins.index);
+    printf("ins->len = %u\n", tape->ins->len);
+    printf("ins->index = %u\n", tape->ins->index);
     printIns(tape, insset);
 
     printf("\nData Tape\n");
-    printf("data->len = %u\n", tape->data.len);
-    printf("data->index = %u\n", tape->data.index);
+    printf("data->len = %u\n", tape->data->len);
+    printf("data->index = %u\n", tape->data->index);
     printData(tape);
     printf("\n");
 }
+/*  getsrc: Encodes instructions from Brainfuck source file into instruction tape
+ * 
+ *  @source: Filename of Brainfuck source file
+ *  @tape: Tape structure in which the instructions will be stored
+ */
+// int getsrc(const char source*){}
 
 /*  changeval: Changes value of data according to given instruction
  *
  *  @tape: Tape structure which data tape cell will be incremented/decremented
  */
 //int changeval(Tapes tape){}
-
-/*  getsrc: Encodes instructions from Brainfuck source file into instruction tape
- * 
- *  @source: Filename of Brainfuck source file
- *  @tape: Tape structure in which the encoded instructions will be stored
- */
-//int getsrc(const char *source, Tapes tape ){}
 
 /*  IO: Takes care of input/output of data tape
  *
