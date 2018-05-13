@@ -30,7 +30,7 @@ DataTapePtr initDataTape(){
     if(retDataTp == NULL){
         return NULL;
     }
-    retDataTp->minWrite = retDataTp->maxWrite = retDataTp->index = retDataTp->len/2;
+    retDataTp->minWrite = retDataTp->maxWrite = retDataTp->index = 0;
 
     return retDataTp;
 }
@@ -114,10 +114,9 @@ int printData(TapesPtr tape){
     DataTapePtr dataTp = tape->data;
     unsigned int min = dataTp->minWrite;
     unsigned int max = dataTp->maxWrite;
-    unsigned int middle = dataTp->len/2;
 
     for(int i = min; i<=max; i++){
-        printf("dataTp->tape[%u] = %d\n", i-middle, dataTp->tape[i]);
+        printf("dataTp->tape[%u] = %d\n", i, dataTp->tape[i]);
     }
     return SUCCESS;
 }
@@ -163,6 +162,7 @@ void printDiagnostics(TapesPtr tape, InsSetPtr insset){
     printf("Instruction Tape\n");
     printf("ins->len = %u\n", tape->ins->len);
     printf("ins->index = %u\n", tape->ins->index);
+    printf("ins->usedlen = %u\n", tape->ins->usedlen);
     printIns(tape, insset);
 
     printf("\nData Tape\n");
@@ -200,13 +200,15 @@ int getsrc(const char *source, TapesPtr tape, InsSetPtr insset){
  *
  *  @tape: Tape structure which data tape cell will be incremented/decremented
  */
+static
 int changeval(TapesPtr tape){
     if(tape == NULL){
         return FAIL;
     }
+
     InsTapePtr insTp = tape->ins;
     DataTapePtr dataTp = tape->data;
-
+    
     switch(insTp->tape[insTp->index]){
         case INC:
             if(dataTp->tape[dataTp->index]+1 > DATAMAX){
@@ -233,14 +235,50 @@ int changeval(TapesPtr tape){
  *
  *  @tape: Tape structure which data tape will be manipulated over STDIO
  */
+//static
 //int IO(Tapes tape){}
 
 /*  move: Moves data tape according to given instruction(left, right)
  *
  *  @tape: Tape structure containing data tape
  */
+//static 
 //int move(Tapes tape){}
 
-//run(){}
+/* execute: Takes care of executing the right instruction
+ *          - for now the values are hardcodec, in future there will be function
+ *            array containing each one of the functions
+ *
+ * @tape: Tape structure of which one instruction tape will be executed
+ */
+static
+int execute(TapesPtr tape){
+    if(tape == NULL){
+        return FAIL; 
+    }
+    int ins = tape->ins->tape[tape->ins->index];
+
+    if(ins==  INC || ins==  DEC) return changeval(tape);
+/*
+    if(ins==  MV_R || ins==  MV_L) return      move(tape);
+    if(ins== STD_O || ins== STD_I) return        IO(tape);
+    if(ins== WHILE || ins==   END) return      loop(tape);
+*/
+
+    return NDFINS;
+}
+
+int run(TapesPtr tape){
+    if(tape == NULL){
+        return FAIL;
+    }
+    InsTapePtr insTp = tape->ins;
+
+    for(insTp->index = 0; insTp->index < insTp->usedlen; insTp->index++){
+        execute(tape);
+    }
+
+    return SUCCESS;
+}
 
 

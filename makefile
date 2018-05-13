@@ -9,7 +9,7 @@ CFLAGS = -O0 -ggdb -Wall -Werror
 # 'make' or 'make all' compiles executable
 # 'make clean' - removes files produced mid compiling
 
-.PHONY: all clean
+.PHONY: all clean cls
 #====NO TOUCHIE TOUCHIE BELOW THIS LINE====#
 
 OBJS = ${SRCS:.c=.o} $(MAINSRC:.c=.o)
@@ -22,5 +22,5 @@ all: $(PROGRAM)
 $(PROGRAM): $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@
 
-clean:
+clean cls:
 	rm -f  $(PROGRAM) $(OBJS)

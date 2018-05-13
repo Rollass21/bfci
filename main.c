@@ -4,12 +4,12 @@ int main(int argc, const char *argv[]){
     const char* source;
     TapesPtr tapes = initTapes();
     if(tapes == NULL){
-        fprintf(stderr, "Error allocating memory! (initTapes)\n");
+        fprintf(stderr, "(initTapes) Error allocating memory !\n");
         return ALLOCFAIL;
     } 
     InsSetPtr insset = initInsSet();
     if(insset == NULL){
-        fprintf(stderr, "Error allocating memory! (initInsSet)\n");
+        fprintf(stderr, "(initInsSet) Error allocating memory!\n");
         return ALLOCFAIL;
     }
 
@@ -19,10 +19,12 @@ int main(int argc, const char *argv[]){
     else{
         source = "helloworld.bf";
     }
-    getsrc(source, tapes, insset);
+    if(getsrc(source, tapes, insset) != SUCCESS){
+        fprintf(stderr, "(getsrc) Error obtaining source file '%s' !\n", source);
+        return FILEFAIL;
+    }
 
-    changeval(tapes);
-    changeval(tapes);
+    run(tapes);
 
     printDiagnostics(tapes, insset);
     

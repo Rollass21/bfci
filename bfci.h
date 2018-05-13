@@ -4,24 +4,24 @@
 #include <stdio.h>
 
 /* VALUE DEFINITIONS */
-#define SUCCESS 0
-#define FAIL -1
-#define TRUE 0
-#define FALSE -1
-#define DATAMAX 255
-#define DATAMIN 0
-#define ALLOCJMP 10
+#define SUCCESS      0
+#define FAIL        -1
+#define TRUE         0
+#define FALSE       -1
+#define DATAMAX    255
+#define DATAMIN      0
+#define ALLOCJMP     5
 #define DTMAXLEN 30000
 
 /* ERROR DEFINITONS */
-#define OVERFLOW -2
-#define UNDERFLOW -3
-#define NOLOOPEND -4
+#define OVERFLOW    -2
+#define UNDERFLOW   -3
+#define NOLOOPEND   -4
 #define NOLOOPSTART -5
-#define ALLOCFAIL -6
-#define FILEFAIL -7
-#define NDFINS -8
-#define NDFUSAGE -9
+#define ALLOCFAIL   -6
+#define FILEFAIL    -7
+#define NDFINS      -8
+#define NDFUSAGE    -9
 
 /* INSTRUCTION SET DEFINITION*/
 #define  MV_R '>'
@@ -75,6 +75,6 @@ InsSetPtr initInsSet();
 void freeTapes(TapesPtr tape);
 void printDiagnostics(TapesPtr tape, InsSetPtr innset);
 int getsrc(const char *source, TapesPtr tape, InsSetPtr insset);
-int changeval(TapesPtr tape);
+int run(TapesPtr tape);
 
 #endif
