@@ -206,37 +206,64 @@ int changeval(TapesPtr tape){
         return FAIL;
     }
 
+    int ret = SUCCESS;
+
     InsTapePtr insTp = tape->ins;
     DataTapePtr dataTp = tape->data;
     
     switch(insTp->tape[insTp->index]){
         case INC:
             if(dataTp->tape[dataTp->index]+1 > DATAMAX){
-                return OVERFLOW;
+                ret = OVERFLOW;
             }
             dataTp->tape[dataTp->index]++;
             break;
 
         case DEC:
             if(dataTp->tape[dataTp->index]-1 < DATAMIN){
-                return UNDERFLOW;
+                ret = UNDERFLOW;
             }
             dataTp->tape[dataTp->index]--;
             break;
 
         default:
-            return NDFINS;
+            ret = NDFINS;
     }
 
-    return SUCCESS;
+    return ret;
 }
 
 /*  IO: Takes care of input/output of data tape
  *
- *  @tape: Tape structure which data tape will be manipulated over STDIO
+ *  @tape: Tape structure which data tape will be manipulated over STDI/O
  */
-//static
-//int IO(Tapes tape){}
+static
+int IO(TapesPtr tape){
+    
+    if(tape == NULL){
+        return FAIL;
+    }
+    
+    int ret = SUCCESS;
+
+    InsTapePtr insTp = tape->ins;
+    DataTapePtr dataTp = tape->data;
+    
+    switch(insTp->tape[insTp->index]){
+        case STD_O:
+            putc(dataTp->tape[dataTp->index], stdout);
+            break;
+
+        case STD_I:
+            getc(stdin);
+            break;
+
+        default:
+            ret = NDFINS;
+    }
+
+    return ret;
+}
 
 /*  move: Moves data tape according to given instruction(left, right)
  *
@@ -258,10 +285,10 @@ int execute(TapesPtr tape){
     }
     int ins = tape->ins->tape[tape->ins->index];
 
-    if(ins==  INC || ins==  DEC) return changeval(tape);
+    if(ins==   INC || ins==   DEC) return changeval(tape);
+    if(ins== STD_O || ins== STD_I) return        IO(tape);
 /*
     if(ins==  MV_R || ins==  MV_L) return      move(tape);
-    if(ins== STD_O || ins== STD_I) return        IO(tape);
     if(ins== WHILE || ins==   END) return      loop(tape);
 */
 

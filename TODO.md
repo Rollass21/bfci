@@ -1,4 +1,5 @@
-# Stack for nested while loops
-# Character/Command recognition 
-# to-C translator
-# Command line argument options
+- [ ] Character/Command recognition 
+- [ ] Add tests for functions
+- [ ] Stack for nested while loops
+- [ ] to-C translator
+- [ ] Command line argument options
