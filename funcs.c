@@ -128,7 +128,7 @@ int printIns(TapesPtr tape, InsSetPtr insset){
     }
     InsTapePtr insTp = tape->ins;
     
-    for(int i = 0; i < insTp->len; i++){
+    for(int i = 0; i < insTp->usedlen; i++){
         printf("%c", insTp->tape[i]);
     }
     printf("\n");
@@ -239,7 +239,6 @@ int changeval(TapesPtr tape){
  */
 static
 int IO(TapesPtr tape){
-    
     if(tape == NULL){
         return FAIL;
     }
@@ -269,8 +268,42 @@ int IO(TapesPtr tape){
  *
  *  @tape: Tape structure containing data tape
  */
-//static 
-//int move(Tapes tape){}
+static 
+int move(TapesPtr tape){
+    if(tape == NULL){
+        return FAIL;
+    }
+    
+    int ret = SUCCESS;
+
+    InsTapePtr insTp = tape->ins;
+    DataTapePtr dataTp = tape->data;
+    
+    switch(insTp->tape[insTp->index]){
+        case MV_L:
+            if((long int) --dataTp->index < 0){
+                ret = PASTBOUNDS;
+                dataTp->index = dataTp->len;
+            }
+            if(dataTp->index < dataTp->minWrite){
+                dataTp->minWrite = dataTp->index;
+            }
+
+        case MV_R:
+            if(++dataTp->index > dataTp->len){
+                ret = PASTBOUNDS;
+                dataTp->index = 0;
+            }
+            if(dataTp->index > dataTp->maxWrite){
+                dataTp->maxWrite = dataTp->index;
+            }
+
+        default:
+            ret = NDFINS;
+    }
+
+    return ret;
+}
 
 /* execute: Takes care of executing the right instruction
  *          - for now the values are hardcodec, in future there will be function
@@ -287,8 +320,8 @@ int execute(TapesPtr tape){
 
     if(ins==   INC || ins==   DEC) return changeval(tape);
     if(ins== STD_O || ins== STD_I) return        IO(tape);
-/*
     if(ins==  MV_R || ins==  MV_L) return      move(tape);
+/*
     if(ins== WHILE || ins==   END) return      loop(tape);
 */
 

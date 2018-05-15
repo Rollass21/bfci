@@ -22,6 +22,7 @@
 #define FILEFAIL    -7
 #define NDFINS      -8
 #define NDFUSAGE    -9
+#define PASTBOUNDS -10
 
 /* INSTRUCTION SET DEFINITION*/
 #define  MV_R '>'
