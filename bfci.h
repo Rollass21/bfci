@@ -73,7 +73,7 @@ struct _Tapes{
 /* FUNCTION DECLARATION */
 TapesPtr initTapes();
 InsSetPtr initInsSet();
-void freeTapes(TapesPtr tape);
+void freeTapes(TapesPtr tape, InsSetPtr insset);
 void printDiagnostics(TapesPtr tape, InsSetPtr innset);
 int getsrc(const char *source, TapesPtr tape, InsSetPtr insset);
 int run(TapesPtr tape);

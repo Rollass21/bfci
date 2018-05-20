@@ -7,7 +7,7 @@ InsTapePtr initInsTape(){
         return NULL;
     }
 
-    retInsTp->len = 1;
+    retInsTp->len = ALLOCJMP;
     retInsTp->tape = malloc(retInsTp->len * sizeof(*retInsTp->tape));
     if(retInsTp->tape == NULL){
         return NULL;
@@ -45,11 +45,13 @@ TapesPtr initTapes(){
     }
     retTape->ins = initInsTape();
     if(retTape->ins == NULL){
-        return NULL;
-    }
-    
+        return retTape = NULL;
+ 
+    } 
     retTape->data = initDataTape();
     if(retTape->data == NULL){
+        retTape->ins = NULL;
+        retTape = NULL;
         return NULL;
     }
 
@@ -60,7 +62,7 @@ TapesPtr initTapes(){
  *
  */
 InsSetPtr initInsSet(){
-    InsSetPtr retSet = malloc(INSSLEN * sizeof(retSet));
+    InsSetPtr retSet = malloc(INSSLEN * sizeof(*retSet));
     if(retSet == NULL){
         return NULL;
     }
@@ -86,7 +88,7 @@ static
 int isInstruction(int c, InsSetPtr insset){
     for(int i = 0; i < INSSLEN; i++){
         if(c == insset[i]){
-            return TRUE;
+            return i;
         }
     }
     return FALSE;
@@ -94,15 +96,33 @@ int isInstruction(int c, InsSetPtr insset){
 
 /*  freeTapes: Frees memory allocated for tapes
  *
- *  @tape: Tapes, initialized by initTapes(), to cleanup
+ *  @tape: Tapes, initialized by initTapes() & initInsSet() to cleanup
  */
-void freeTapes(TapesPtr tape){
-   free(tape->ins->tape);
-   tape->ins->tape = NULL;
-   free(tape->data->tape);
-   tape->data->tape = NULL;
-   free(tape);
-   tape = NULL;
+void freeTapes(TapesPtr tape, InsSetPtr insset){
+    if(tape){
+        /* cleanup instruction tape */
+        free(tape->ins->tape);
+        tape->ins->tape = NULL;
+        free(tape->ins);
+        tape->ins = NULL;
+
+        /* cleanup data tape */
+        free(tape->data->tape);
+        tape->data->tape = NULL;
+        free(tape->data);
+        tape->data = NULL;
+
+        free(tape);
+        tape = NULL;
+    }
+           
+    if(insset){
+        /* cleanup instruction set array */
+        free(insset);
+        insset = NULL;
+    }
+
+    return;
 }
 
 static
@@ -159,17 +179,19 @@ int saveIns(int c, TapesPtr tape){
 }
 
 void printDiagnostics(TapesPtr tape, InsSetPtr insset){
-    printf("Instruction Tape\n");
+    printf("\n\n##########################\n");
+    printf("# Instruction Tape\n");
     printf("ins->len = %u\n", tape->ins->len);
     printf("ins->index = %u\n", tape->ins->index);
     printf("ins->usedlen = %u\n", tape->ins->usedlen);
     printIns(tape, insset);
 
-    printf("\nData Tape\n");
+    printf("\n");
+    printf("# Data Tape\n");
     printf("data->len = %u\n", tape->data->len);
     printf("data->index = %u\n", tape->data->index);
     printData(tape);
-    printf("\n");
+    printf("##########################\n");
 }
 /*  getsrc: Encodes instructions from Brainfuck source file into instruction tape
  * 

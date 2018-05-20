@@ -11,46 +11,48 @@ CC	makefile	/^CC = gcc # compiler used: gcc$/;"	m
 CFLAGS	makefile	/^CFLAGS = -O0 -ggdb -Wall -Werror$/;"	m
 DATAMAX	bfci.h	11;"	d
 DATAMIN	bfci.h	12;"	d
-DEC	bfci.h	30;"	d
+DEC	bfci.h	31;"	d
 DTMAXLEN	bfci.h	14;"	d
 DataTape	bfci.h	/^typedef struct _DataTape DataTape;$/;"	t	typeref:struct:_DataTape
 DataTapePtr	bfci.h	/^typedef DataTape *DataTapePtr;$/;"	t
-END	bfci.h	34;"	d
+END	bfci.h	35;"	d
 FAIL	bfci.h	8;"	d
 FALSE	bfci.h	10;"	d
 FILEFAIL	bfci.h	22;"	d
 HEADERS	makefile	/^HEADERS = bfci.h # .h files$/;"	m
-INC	bfci.h	29;"	d
-INSSLEN	bfci.h	37;"	d
+INC	bfci.h	30;"	d
+INSSLEN	bfci.h	38;"	d
+IO	funcs.c	/^int IO(TapesPtr tape){$/;"	f	file:
 InsSetPtr	bfci.h	/^typedef int *InsSetPtr;$/;"	t
 InsTape	bfci.h	/^typedef struct _InsTape InsTape;$/;"	t	typeref:struct:_InsTape
 InsTapePtr	bfci.h	/^typedef InsTape *InsTapePtr;$/;"	t
 MAINSRC	makefile	/^MAINSRC = main.c # main source file, in most cases main.c$/;"	m
-MV_L	bfci.h	28;"	d
-MV_R	bfci.h	27;"	d
+MV_L	bfci.h	29;"	d
+MV_R	bfci.h	28;"	d
 NDFINS	bfci.h	23;"	d
 NDFUSAGE	bfci.h	24;"	d
 NOLOOPEND	bfci.h	19;"	d
 NOLOOPSTART	bfci.h	20;"	d
 OBJS	makefile	/^OBJS = ${SRCS:.c=.o} $(MAINSRC:.c=.o)$/;"	m
 OVERFLOW	bfci.h	17;"	d
+PASTBOUNDS	bfci.h	25;"	d
 PROGRAM	makefile	/^PROGRAM = bfci # name of executable$/;"	m
 SRCS	makefile	/^SRCS = funcs.c # .c files containing funcs$/;"	m
-STD_I	bfci.h	32;"	d
-STD_O	bfci.h	31;"	d
+STD_I	bfci.h	33;"	d
+STD_O	bfci.h	32;"	d
 SUCCESS	bfci.h	7;"	d
 TRUE	bfci.h	9;"	d
 Tapes	bfci.h	/^typedef struct _Tapes Tapes;$/;"	t	typeref:struct:_Tapes
 TapesPtr	bfci.h	/^typedef Tapes *TapesPtr;$/;"	t
 UNDERFLOW	bfci.h	18;"	d
-WHILE	bfci.h	33;"	d
+WHILE	bfci.h	34;"	d
 _DataTape	bfci.h	/^struct _DataTape{$/;"	s
 _InsTape	bfci.h	/^struct _InsTape{$/;"	s
 _Tapes	bfci.h	/^struct _Tapes{$/;"	s
-changeval	funcs.c	/^int changeval(TapesPtr tape){$/;"	f
+changeval	funcs.c	/^int changeval(TapesPtr tape){$/;"	f	file:
 data	bfci.h	/^    DataTapePtr data;$/;"	m	struct:_Tapes
-execute	funcs.c	/^int execute(TapesPtr tape){$/;"	f
-freeTapes	funcs.c	/^void freeTapes(TapesPtr tape){$/;"	f
+execute	funcs.c	/^int execute(TapesPtr tape){$/;"	f	file:
+freeTapes	funcs.c	/^void freeTapes(TapesPtr tape, InsSetPtr insset){$/;"	f
 getsrc	funcs.c	/^int getsrc(const char *source, TapesPtr tape, InsSetPtr insset){$/;"	f
 index	bfci.h	/^    unsigned int index,$/;"	m	struct:_DataTape
 index	bfci.h	/^    unsigned int index,$/;"	m	struct:_InsTape
@@ -65,6 +67,7 @@ len	bfci.h	/^                 len;$/;"	m	struct:_InsTape
 main	main.c	/^int main(int argc, const char *argv[]){$/;"	f
 maxWrite	bfci.h	/^                 maxWrite,$/;"	m	struct:_DataTape
 minWrite	bfci.h	/^                 minWrite;$/;"	m	struct:_DataTape
+move	funcs.c	/^int move(TapesPtr tape){$/;"	f	file:
 printData	funcs.c	/^int printData(TapesPtr tape){$/;"	f	file:
 printDiagnostics	funcs.c	/^void printDiagnostics(TapesPtr tape, InsSetPtr insset){$/;"	f
 printIns	funcs.c	/^int printIns(TapesPtr tape, InsSetPtr insset){$/;"	f	file:

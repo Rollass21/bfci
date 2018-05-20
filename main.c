@@ -2,12 +2,10 @@
 
 int main(int argc, const char *argv[]){
     TapesPtr tapes = initTapes();
-    if(tapes == NULL){
-        fprintf(stderr, "(initTapes) Error allocating memory !\n");
-        return ALLOCFAIL;
-    } 
     InsSetPtr insset = initInsSet();
-    if(insset == NULL){
+
+    if(tapes == NULL || insset == NULL){
+        freeTapes(tapes, insset);
         fprintf(stderr, "(initInsSet) Error allocating memory!\n");
         return ALLOCFAIL;
     }
@@ -25,6 +23,6 @@ int main(int argc, const char *argv[]){
 
     printDiagnostics(tapes, insset);
     
-    freeTapes(tapes);
+    freeTapes(tapes, insset);
     return SUCCESS;
 }
