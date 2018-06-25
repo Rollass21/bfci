@@ -10,7 +10,7 @@ int main(int argc, const char *argv[]){
         return ALLOCFAIL;
     }
 
-    const char* source = "helloworld.bf";
+    const char* source = "bfSrcs/helloworld.bf";
     if(argc > 1)
         source = argv[1];
 

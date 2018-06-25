@@ -207,7 +207,7 @@ int getsrc(const char *source, TapesPtr tape, InsSetPtr insset){
     }
 
     while((c = getc(src_file)) != EOF){
-        if(isInstruction(c, insset) == TRUE){
+        if(isInstruction(c, insset) != FALSE){
             saveIns(c, tape);
         }
     }
