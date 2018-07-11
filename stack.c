@@ -1,13 +1,17 @@
-StackPtr initStack(){
+StackPtr
+initStack(){
     StackPtr retPtr = malloc(sizeof(*retPtr));
     if(retPtr == NULL)
         return NULL;
 
     retPtr->array = NULL;
     retPtr->len = 0;
+
+    return retPtr;
 } 
 
-unsigned int SPush(StackPtr stack, unsigned int startIndex, unsigned int endIndex){
+int
+SPush(StackPtr stack, unsigned int startIndex, unsigned int endIndex){
     if(stack == NULL)
         stack = initStack;
 
@@ -23,10 +27,9 @@ unsigned int SPush(StackPtr stack, unsigned int startIndex, unsigned int endInde
     if(startIndex == endIndex)
         return FAIL;
 
-    stack->len++;
-    stack->array = realloc(stack->array, stack->len * sizeof(*stack->array));
+    stack->array = realloc(stack->array, ++stack->len * sizeof(*stack->array));
     if (stack->array = NULL) {
-        stack->len = 0;        
+        freeStack(stack);
         return FAIL;
     }
 
@@ -36,7 +39,8 @@ unsigned int SPush(StackPtr stack, unsigned int startIndex, unsigned int endInde
     return SUCCESS;
 }
 
-unsigned int SPop(StackPtr stack){
+int
+SPop(StackPtr stack){
     //little too explicit i know
     if (stack != NULL && stack->len > 0 && stack->array == NULL) {
         return FAIL;
@@ -52,7 +56,8 @@ unsigned int SPop(StackPtr stack){
 
 }
 
-void freeStack(StackPtr stack){
+void
+freeStack(StackPtr stack){
     free(stack->array);
     stack->array = NULL;
 

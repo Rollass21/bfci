@@ -310,6 +310,7 @@ int move(TapesPtr tape){
             if(dataTp->index < dataTp->minWrite){
                 dataTp->minWrite = dataTp->index;
             }
+            break;
 
         case MV_R:
             if(++dataTp->index > dataTp->len){
@@ -319,6 +320,7 @@ int move(TapesPtr tape){
             if(dataTp->index > dataTp->maxWrite){
                 dataTp->maxWrite = dataTp->index;
             }
+            break;
 
         default:
             ret = NDFINS;
@@ -362,5 +364,36 @@ int run(TapesPtr tape){
 
     return SUCCESS;
 }
+
+unsigned int
+getMatchingEnd(TapesPtr tape){
+    if(tape == NULL) {
+        return FAIL;
+    }
+
+    InsTapePtr insTp = tape->ins;
+    int count = 1;
+    unsigned int currindex = insTp->index;
+    
+    /* Search for matching brace until end of instruction tape */
+    while (++currindex < insTp->usedlen && count != 0){
+        switch (insTp->tape[currindex]){
+            case WHILE: count++;
+                        break;
+
+            case   END: count--;
+                        break;
+        }
+    }
+
+    /* No matching brace*/
+    if (count) {
+        return 0;
+    }
+
+    return currindex;
+}
+
+
 
 
