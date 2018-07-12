@@ -1,4 +1,19 @@
 #include "bfci.h"
+#include "stack.h"
+
+static unsigned int
+jmp(TapesPtr tape, unsigned int dest){
+    if(tape == NULL){
+        return NDFUSAGE;
+    }
+
+    InsTapePtr insTp = tape->ins;
+    
+    if (dest < insTp->usedlen)
+        insTp->index = dest;
+
+    return dest;
+}
 
 static
 InsTapePtr initInsTape(){
@@ -66,14 +81,16 @@ InsSetPtr initInsSet(){
     if(retSet == NULL){
         return NULL;
     }
-    retSet[0] =  MV_R;
-    retSet[1] =  MV_L;
-    retSet[2] =   INC;
-    retSet[3] =   DEC;
-    retSet[4] = STD_O;
-    retSet[5] = STD_I;
-    retSet[6] = WHILE;
-    retSet[7] =   END;
+    
+    int i = 0;
+    retSet[i++] =  MV_R;
+    retSet[i++] =  MV_L;
+    retSet[i++] =   INC;
+    retSet[i++] =   DEC;
+    retSet[i++] = STD_O;
+    retSet[i++] = STD_I;
+    retSet[i++] = WHILE;
+    retSet[i++] =   END;
 
     return retSet;
 }
@@ -329,42 +346,6 @@ int move(TapesPtr tape){
     return ret;
 }
 
-/* execute: Takes care of executing the right instruction
- *          - for now the values are hardcodec, in future there will be function
- *            array containing each one of the functions
- *
- * @tape: Tape structure of which one instruction tape will be executed
- */
-static
-int execute(TapesPtr tape){
-    if(tape == NULL){
-        return FAIL; 
-    }
-    int ins = tape->ins->tape[tape->ins->index];
-
-    if(ins==   INC || ins==   DEC) return changeval(tape);
-    if(ins== STD_O || ins== STD_I) return        IO(tape);
-    if(ins==  MV_R || ins==  MV_L) return      move(tape);
-/*
-    if(ins== WHILE || ins==   END) return      loop(tape);
-*/
-
-    return NDFINS;
-}
-
-int run(TapesPtr tape){
-    if(tape == NULL){
-        return FAIL;
-    }
-    InsTapePtr insTp = tape->ins;
-
-    for(insTp->index = 0; insTp->index < insTp->usedlen; insTp->index++){
-        execute(tape);
-    }
-
-    return SUCCESS;
-}
-
 unsigned int
 getMatchingEnd(TapesPtr tape){
     if(tape == NULL) {
@@ -393,6 +374,99 @@ getMatchingEnd(TapesPtr tape){
 
     return currindex;
 }
+
+static
+int loop(TapesPtr tape, StackPtr stack){
+    if(tape == NULL || stack == NULL){
+        return FAIL;
+    }
+    
+    int ret = SUCCESS;
+
+    InsTapePtr insTp = tape->ins;
+    DataTapePtr dataTp = tape->data;
+    
+    switch(insTp->tape[insTp->index]){
+        case WHILE:;
+            unsigned int start = insTp->index;
+            unsigned int end = getMatchingEnd(tape);
+            if (end == 0) {
+                freeStack(stack);
+                return NOLOOPEND;
+            }
+            // if not already been on this WHILe bracket, push it
+            if ( start != stack->array[stack->len - 1].start
+                && end != stack->array[stack->len - 1].end)
+                     SPush(stack, start, end);
+            
+            // If current data == 0, jump to END
+            if (dataTp->tape[dataTp->index] == 0) {
+                jmp(tape, stack->array[stack->len - 1].end);
+                SPop(stack);
+            }
+
+            break;
+
+        case END:
+            // If stack is empty
+            if (stack->len == 0) {
+                return NOLOOPSTART;    
+            }
+            // If current data != 0, jump to WHILE start
+            if (dataTp->tape[dataTp->index] != 0) {
+                jmp(tape, stack->array[stack->len - 1].start);
+            }
+
+            break;
+
+        default:
+            ret = NDFINS;
+    }
+
+    return ret;
+}
+
+/* execute: Takes care of executing the right instruction
+ *          - for now the values are hardcodec, in future there will be function
+ *            array containing each one of the functions
+ *
+ * @tape: Tape structure of which one instruction tape will be executed
+ */
+static
+int execute(TapesPtr tape, StackPtr stack){
+    if(tape == NULL){
+        return FAIL; 
+    }
+    int ins = tape->ins->tape[tape->ins->index];
+
+    if(ins==   INC || ins==   DEC) return changeval(tape);
+    if(ins== STD_O || ins== STD_I) return        IO(tape);
+    if(ins==  MV_R || ins==  MV_L) return      move(tape);
+    if(ins== WHILE || ins==   END) return      loop(tape, stack);
+
+    return NDFINS;
+}
+
+int run(TapesPtr tape){
+    if(tape == NULL){
+        return FAIL;
+    }
+
+    StackPtr stack = initStack();
+    if (stack == NULL)
+        return ALLOCFAIL;
+
+    InsTapePtr insTp = tape->ins;
+    int ret = SUCCESS;
+
+    for(insTp->index = 0; insTp->index < insTp->usedlen; insTp->index++){
+        if ((ret = execute(tape, stack)) != SUCCESS)
+            return ret;
+    }
+
+    return ret;
+}
+
 
 
 

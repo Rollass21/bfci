@@ -25,8 +25,8 @@ struct _stack {
     BracketPairPtr array;
 };
 
-StackPtr initStack();
-unsigned int SPush(StackPtr stack, unsigned int startIndex, unsigned int endIndex);
-unsigned int SPop(StackPtr stack);
+StackPtr initStack(void);
+int SPush(StackPtr stack, unsigned int startIndex, unsigned int endIndex);
+int SPop(StackPtr stack);
 void freeStack(StackPtr stack);
 

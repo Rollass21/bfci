@@ -1,3 +1,5 @@
+#include "stack.h"
+
 StackPtr
 initStack(){
     StackPtr retPtr = malloc(sizeof(*retPtr));
@@ -13,12 +15,12 @@ initStack(){
 int
 SPush(StackPtr stack, unsigned int startIndex, unsigned int endIndex){
     if(stack == NULL)
-        stack = initStack;
+        stack = initStack();
 
     if(stack->array == NULL){
         stack->len = 1;
         stack->array = malloc(stack->len * sizeof(*stack->array));
-        if (stack->array = NULL) {
+        if (stack->array == NULL) {
             stack->len = 0;        
             return FAIL;
         }
@@ -28,13 +30,13 @@ SPush(StackPtr stack, unsigned int startIndex, unsigned int endIndex){
         return FAIL;
 
     stack->array = realloc(stack->array, ++stack->len * sizeof(*stack->array));
-    if (stack->array = NULL) {
+    if (stack->array == NULL) {
         freeStack(stack);
         return FAIL;
     }
 
-    stack->array[len - 1].start := startIndex;
-    stack->array[len - 1].end := endIndex;
+    stack->array[stack->len - 1].start = startIndex;
+    stack->array[stack->len - 1].end = endIndex;
     
     return SUCCESS;
 }
@@ -42,12 +44,13 @@ SPush(StackPtr stack, unsigned int startIndex, unsigned int endIndex){
 int
 SPop(StackPtr stack){
     //little too explicit i know
-    if (stack != NULL && stack->len > 0 && stack->array == NULL) {
+    if (stack == NULL && stack->len == 0 && stack->array == NULL) {
         return FAIL;
     }
-
+    
     stack->array = realloc(stack->array, --stack->len * sizeof(*stack->array));
     if (stack->array == NULL) {
+        // when at 0 byte size, realloc already frees the array
         freeStack(stack);
         return FAIL;
     }
