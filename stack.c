@@ -13,7 +13,7 @@ initStack(){
 } 
 
 int
-SPush(StackPtr stack, unsigned int startIndex, unsigned int endIndex){
+SPush(StackPtr stack, unsigned int startindex, unsigned int endindex){
     if(stack == NULL)
         stack = initStack();
 
@@ -26,8 +26,9 @@ SPush(StackPtr stack, unsigned int startIndex, unsigned int endIndex){
         }
     }
 
-    if(startIndex == endIndex)
-        return FAIL;
+    if (startindex == stack->array[stack->len - 1].start
+        || endindex == stack->array[stack->len - 1].end)
+        return TRUE;
 
     stack->array = realloc(stack->array, ++stack->len * sizeof(*stack->array));
     if (stack->array == NULL) {
@@ -35,8 +36,8 @@ SPush(StackPtr stack, unsigned int startIndex, unsigned int endIndex){
         return FAIL;
     }
 
-    stack->array[stack->len - 1].start = startIndex;
-    stack->array[stack->len - 1].end = endIndex;
+    stack->array[stack->len - 1].start = startindex;
+    stack->array[stack->len - 1].end = endindex;
     
     return SUCCESS;
 }

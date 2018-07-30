@@ -7,6 +7,8 @@
 ALLOCFAIL	bfci.h	21;"	d
 ALLOCJMP	bfci.h	13;"	d
 BFCI_H	bfci.h	2;"	d
+BracketPair	stack.h	/^typedef struct _bracketPair BracketPair;$/;"	t	typeref:struct:_bracketPair
+BracketPairPtr	stack.h	/^typedef BracketPair* BracketPairPtr;$/;"	t
 CC	makefile	/^CC = gcc # compiler used: gcc$/;"	m
 CFLAGS	makefile	/^CFLAGS = -O0 -ggdb -Wall -Werror$/;"	m
 DATAMAX	bfci.h	11;"	d
@@ -17,7 +19,9 @@ DataTape	bfci.h	/^typedef struct _DataTape DataTape;$/;"	t	typeref:struct:_DataT
 DataTapePtr	bfci.h	/^typedef DataTape *DataTapePtr;$/;"	t
 END	bfci.h	35;"	d
 FAIL	bfci.h	8;"	d
+FAIL	stack.h	5;"	d
 FALSE	bfci.h	10;"	d
+FALSE	stack.h	7;"	d
 FILEFAIL	bfci.h	22;"	d
 HEADERS	makefile	/^HEADERS = bfci.h # .h files$/;"	m
 INC	bfci.h	30;"	d
@@ -37,11 +41,19 @@ OBJS	makefile	/^OBJS = ${SRCS:.c=.o} $(MAINSRC:.c=.o)$/;"	m
 OVERFLOW	bfci.h	17;"	d
 PASTBOUNDS	bfci.h	25;"	d
 PROGRAM	makefile	/^PROGRAM = bfci # name of executable$/;"	m
-SRCS	makefile	/^SRCS = funcs.c # .c files containing funcs$/;"	m
+SAMEADDR	stack.h	9;"	d
+SPop	stack.c	/^SPop(StackPtr stack){$/;"	f
+SPush	stack.c	/^SPush(StackPtr stack, unsigned int startindex, unsigned int endindex){$/;"	f
+SRCS	makefile	/^SRCS = funcs.c stack.c # .c files containing funcs$/;"	m
 STD_I	bfci.h	33;"	d
 STD_O	bfci.h	32;"	d
 SUCCESS	bfci.h	7;"	d
+SUCCESS	stack.h	4;"	d
+S_last	stack.h	11;"	d
+Stack	stack.h	/^typedef struct _stack Stack;$/;"	t	typeref:struct:_stack
+StackPtr	stack.h	/^typedef Stack* StackPtr;$/;"	t
 TRUE	bfci.h	9;"	d
+TRUE	stack.h	6;"	d
 Tapes	bfci.h	/^typedef struct _Tapes Tapes;$/;"	t	typeref:struct:_Tapes
 TapesPtr	bfci.h	/^typedef Tapes *TapesPtr;$/;"	t
 UNDERFLOW	bfci.h	18;"	d
@@ -49,21 +61,31 @@ WHILE	bfci.h	34;"	d
 _DataTape	bfci.h	/^struct _DataTape{$/;"	s
 _InsTape	bfci.h	/^struct _InsTape{$/;"	s
 _Tapes	bfci.h	/^struct _Tapes{$/;"	s
+_bracketPair	stack.h	/^struct _bracketPair {$/;"	s
+_stack	stack.h	/^struct _stack {$/;"	s
+array	stack.h	/^    BracketPairPtr array;$/;"	m	struct:_stack
 changeval	funcs.c	/^int changeval(TapesPtr tape){$/;"	f	file:
 data	bfci.h	/^    DataTapePtr data;$/;"	m	struct:_Tapes
-execute	funcs.c	/^int execute(TapesPtr tape){$/;"	f	file:
+end	stack.h	/^                 end;$/;"	m	struct:_bracketPair
+execute	funcs.c	/^int execute(TapesPtr tape, StackPtr stack){$/;"	f	file:
+freeStack	stack.c	/^freeStack(StackPtr stack){$/;"	f
 freeTapes	funcs.c	/^void freeTapes(TapesPtr tape, InsSetPtr insset){$/;"	f
+getMatchingEnd	funcs.c	/^getMatchingEnd(TapesPtr tape){$/;"	f
 getsrc	funcs.c	/^int getsrc(const char *source, TapesPtr tape, InsSetPtr insset){$/;"	f
 index	bfci.h	/^    unsigned int index,$/;"	m	struct:_DataTape
 index	bfci.h	/^    unsigned int index,$/;"	m	struct:_InsTape
 initDataTape	funcs.c	/^DataTapePtr initDataTape(){$/;"	f	file:
 initInsSet	funcs.c	/^InsSetPtr initInsSet(){$/;"	f
 initInsTape	funcs.c	/^InsTapePtr initInsTape(){$/;"	f	file:
+initStack	stack.c	/^initStack(){$/;"	f
 initTapes	funcs.c	/^TapesPtr initTapes(){$/;"	f
 ins	bfci.h	/^    InsTapePtr ins;$/;"	m	struct:_Tapes
 isInstruction	funcs.c	/^int isInstruction(int c, InsSetPtr insset){$/;"	f	file:
+jmp	funcs.c	/^jmp(TapesPtr tape, unsigned int dest){$/;"	f	file:
 len	bfci.h	/^                 len,$/;"	m	struct:_DataTape
 len	bfci.h	/^                 len;$/;"	m	struct:_InsTape
+len	stack.h	/^    unsigned int len;$/;"	m	struct:_stack
+loop	funcs.c	/^int loop(TapesPtr tape, StackPtr stack){$/;"	f	file:
 main	main.c	/^int main(int argc, const char *argv[]){$/;"	f
 maxWrite	bfci.h	/^                 maxWrite,$/;"	m	struct:_DataTape
 minWrite	bfci.h	/^                 minWrite;$/;"	m	struct:_DataTape
@@ -73,6 +95,7 @@ printDiagnostics	funcs.c	/^void printDiagnostics(TapesPtr tape, InsSetPtr insset
 printIns	funcs.c	/^int printIns(TapesPtr tape, InsSetPtr insset){$/;"	f	file:
 run	funcs.c	/^int run(TapesPtr tape){$/;"	f
 saveIns	funcs.c	/^int saveIns(int c, TapesPtr tape){$/;"	f	file:
+start	stack.h	/^    unsigned int start,$/;"	m	struct:_bracketPair
 tape	bfci.h	/^    int *tape;$/;"	m	struct:_InsTape
 tape	bfci.h	/^    unsigned char *tape;$/;"	m	struct:_DataTape
 usedlen	bfci.h	/^                 usedlen,$/;"	m	struct:_InsTape

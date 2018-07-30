@@ -1,6 +1,16 @@
 #include "bfci.h"
 #include "stack.h"
 
+/* TODO
+ * jmp()
+ *
+ * @tape - ...
+ * @dest - Position/Index on which to set instruciton tape index
+ *
+ * Used to between instructions
+ * On correct jump, returns destination index, doesnt error out in case of
+ * overflow
+ */
 static unsigned int
 jmp(TapesPtr tape, unsigned int dest){
     if(tape == NULL){
@@ -303,10 +313,14 @@ int IO(TapesPtr tape){
     return ret;
 }
 
-/*  move: Moves data tape according to given instruction(left, right)
+/*
+ * move()
  *
  *  @tape: Tape structure containing data tape
- */
+ *
+ *  Moves data tape according to given instruction under instruction tape
+ *  index(left, right)
+*/
 static 
 int move(TapesPtr tape){
     if(tape == NULL){
@@ -320,11 +334,11 @@ int move(TapesPtr tape){
     
     switch(insTp->tape[insTp->index]){
         case MV_L:
-            if((long int) --dataTp->index < 0){
+            if(dataTp->index == 0){
                 ret = PASTBOUNDS;
                 dataTp->index = dataTp->len;
             }
-            if(dataTp->index < dataTp->minWrite){
+            if(--dataTp->index < dataTp->minWrite){
                 dataTp->minWrite = dataTp->index;
             }
             break;
@@ -346,6 +360,15 @@ int move(TapesPtr tape){
     return ret;
 }
 
+/* TODO
+ * getMatchingEnd()
+ *
+ *  @tape - Pointer to structure containing initialized data & instruction tapes
+ *
+ *  Returns index of closing bracket paired with the one currently under
+ *  instruction tape index.
+ *  If pairing bracket not found, returns 0.
+ */
 unsigned int
 getMatchingEnd(TapesPtr tape){
     if(tape == NULL) {
@@ -357,7 +380,7 @@ getMatchingEnd(TapesPtr tape){
     unsigned int currindex = insTp->index;
     
     /* Search for matching brace until end of instruction tape */
-    while (++currindex < insTp->usedlen && count != 0){
+    while (count != 0 && ++currindex < insTp->usedlen ){
         switch (insTp->tape[currindex]){
             case WHILE: count++;
                         break;
@@ -367,7 +390,6 @@ getMatchingEnd(TapesPtr tape){
         }
     }
 
-    /* No matching brace*/
     if (count) {
         return 0;
     }
@@ -375,6 +397,14 @@ getMatchingEnd(TapesPtr tape){
     return currindex;
 }
 
+
+/* TODO
+ * loop()
+ *
+ * @tape - ...
+ * @stack - Pointer to stack that corresponds to given @tape
+ *
+ */
 static
 int loop(TapesPtr tape, StackPtr stack){
     if(tape == NULL || stack == NULL){
@@ -394,10 +424,7 @@ int loop(TapesPtr tape, StackPtr stack){
                 freeStack(stack);
                 return NOLOOPEND;
             }
-            // if not already been on this WHILe bracket, push it
-            if ( start != stack->array[stack->len - 1].start
-                && end != stack->array[stack->len - 1].end)
-                     SPush(stack, start, end);
+            SPush(stack, start, end);
             
             // If current data == 0, jump to END
             if (dataTp->tape[dataTp->index] == 0) {
