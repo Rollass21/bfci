@@ -2,10 +2,11 @@
 #define BFCI_H 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 /* VALUE DEFINITIONS */
 #define SUCCESS      0
-#define FAIL        -1
+#define FAIL        -2
 #define TRUE         0
 #define FALSE       -1
 #define DATAMAX    255
@@ -14,68 +15,100 @@
 #define DTMAXLEN 30000
 
 /* ERROR DEFINITONS */
-#define OVERFLOW    -2
-#define UNDERFLOW   -3
-#define NOLOOPEND   -4
-#define NOLOOPSTART -5
-#define ALLOCFAIL   -6
-#define FILEFAIL    -7
-#define NDFINS      -8
-#define NDFUSAGE    -9
-#define PASTBOUNDS -10
+#define OVERFLOW    -3
+#define UNDERFLOW   -4
+#define NOLOOPEND   -5
+#define NOLOOPSTART -6
+#define ALLOCFAIL   -7
+#define FILEFAIL    -8
+#define NDFINS      -9
+#define NDFUSAGE    -10
+#define PASTBOUNDS  -11
 
-/* INSTRUCTION SET DEFINITION*/
-#define  MV_R '>'
-#define  MV_L '<'
+/* INSTRUCTION SET OPCODES*/
+#define   MVR '>'
+#define   MVL '<'
 #define   INC '+'
 #define   DEC '-'
-#define STD_O '.'
-#define STD_I ','
+#define  STDO '.'
+#define  STDI ','
 #define WHILE '['
 #define   END ']'
 
-/* INStruction Set LENgth */
-#define  INSSLEN 8
+/* DATA TYPES DECALRATIONS */
+typedef int bool;
+typedef unsigned int uint;
 
-/* DATA TYPES DEFINITION */
-/* INSTRUCTION SET ARRAY */
-typedef int *InsSetPtr;
+/* {*}Obj are always pointers and need to be initialized */
+typedef struct _ctxObjT     *ctxObjT;
+typedef struct _dataObjT   *dataObjT;
+typedef struct _insObjT    *insObjT;
+typedef struct _stackObjT  *stackObjT;
 
-/* DATA TAPE */
-typedef struct _DataTape DataTape;
-typedef DataTape *DataTapePtr;
-struct _DataTape{
-    unsigned char *tape;
-    unsigned int index,
-                 len,
-                 maxWrite,
-                 minWrite;
+typedef struct _stackCellT  stackCellT;
+typedef struct _insSetT     insSetT;
+typedef int    (*cmd)       (ctxObjT Ctx, uint flag);
+
+/*
+ * _ctxObjT      -- Object encapsulating source code and data
+ */
+struct _ctxObjT {
+    insObjT ins;            /* instruction object containing source code to execute */
+    dataObjT data;          /* data object containing data over which instruction operate */
+    stackObjT stack;        /* stack object used to store stacked bracket indexes */
+    uint flags;             /*  */
 };
 
-/* INSTRUCTION TAPE */
-typedef struct _InsTape InsTape;
-typedef InsTape *InsTapePtr;
-struct _InsTape{
-    int *tape;
-    unsigned int index,
-                 usedlen,
-                 len;
+/*
+ * _DataObjT    -- Object containing data over which InsTape operates
+ */
+struct _dataObjT{
+    unsigned char *tape;    /* data array */                              
+    size_t index;           /* index of current data block */
+    size_t usedlen;         /* furthest visited array index */                 
+    size_t len;             /* length of array */                   
 };
 
-/* TAPES */
-typedef struct _Tapes Tapes;
-typedef Tapes *TapesPtr;
-struct _Tapes{
-    InsTapePtr ins;
-    DataTapePtr data;
+/*
+ * InsObjT      -- Object containing BrainFuck source code
+ */
+struct _insObjT{
+    unsigned char *tape;    /* instruction array */                              
+    size_t index;           /* index of current instruction */
+    size_t usedlen;         /* furthest visited array index */                 
+    size_t len;             /* length of array */                   
+    char* srcdest;          /* filename of inputed BrainFuck source code */
 };
 
-/* FUNCTION DECLARATION */
-TapesPtr initTapes();
-InsSetPtr initInsSet();
-void freeTapes(TapesPtr tape, InsSetPtr insset);
-void printDiagnostics(TapesPtr tape, InsSetPtr innset);
-int getsrc(const char *source, TapesPtr tape, InsSetPtr insset);
-int run(TapesPtr tape);
+/*
+ * _stackCell   -- Indexable starting and ending brackets in stackObjT
+ */
+struct _stackCellT {
+    size_t start,           /* index of opening bracket, as WHILE in insSet */
+           end;             /* index of closing bracket, as END in insSet */
+};
+
+/*
+ * _stackObjT   -- Object containing 
+ */
+struct _stackObjT {
+    size_t len;             /* number of cells in stack array*/
+    stackCellT *tape;       /* stack array containing bracket pairs */
+};
+
+/* 
+ * _InsSetT     -- Information about BrainFuck instruction set 
+ */
+struct _insSetT {
+    const char *name;       /* name of operation or NULL at end of object */
+    char opcode;            /* identifier of specific operation */
+    cmd command;            /* operation specific function to call */
+};
+
+
+/* FUNCTION DECLARATIONS */
+ctxObjT initCtx(const char* srcFileName, size_t datalen, uint flags);
+void printCtx(ctxObjT Ctx);
+void clearCtx(ctxObjT Ctx);
 
 #endif
