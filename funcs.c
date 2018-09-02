@@ -1,13 +1,13 @@
 #include "bfci.h"
 
-static int mvRight(ctxObjT, uint);
-static int  mvLeft(ctxObjT, uint);
-static int incData(ctxObjT, uint);
-static int decData(ctxObjT, uint);
-static int outData(ctxObjT, uint);
-static int inpData(ctxObjT, uint);
-static int loopBeg(ctxObjT, uint);
-static int loopEnd(ctxObjT, uint);
+static int mvRight(ctxObjT, uint flags);
+static int  mvLeft(ctxObjT, uint flags);
+static int incData(ctxObjT, uint flags);
+static int decData(ctxObjT, uint flags);
+static int outData(ctxObjT, uint flags);
+static int inpData(ctxObjT, uint flags);
+static int loopBeg(ctxObjT, uint flags);
+static int loopEnd(ctxObjT, uint flags);
 
 /* Instruction set */
 static const insSetT insSet[] = {
@@ -82,7 +82,7 @@ int pushIns(int c, insObjT insObj){
         return FAIL;
     }
 
-    if (insObj->index + 1 > insObj->len){
+    if (insObj->usedlen + 1 > insObj->len){
         insObj->len += ALLOCJMP;
 
         size_t memSize = insObj->len * sizeof(*insObj->tape);
@@ -94,8 +94,7 @@ int pushIns(int c, insObjT insObj){
         }
         insObj = insObjCopy;
     }
-    insObj->tape[insObj->index++] = c;
-    insObj->usedlen = insObj->index;
+    insObj->tape[insObj->usedlen++] = c;
 
     return SUCCESS;
 }
@@ -130,7 +129,7 @@ int isInstruction(int c) {
 
 static
 int mvRight(ctxObjT Ctx,
-            __attribute__((unused)) uint flag){
+            __attribute__((unused)) uint flags){
 
     if (isValidCtx(Ctx) != TRUE){
         return FAIL;
@@ -149,7 +148,7 @@ int mvRight(ctxObjT Ctx,
 
 static
 int mvLeft(ctxObjT Ctx,
-           __attribute__((unused)) uint flag){
+           __attribute__((unused)) uint flags){
 
     if (isValidCtx(Ctx) != TRUE){
         return FAIL;
@@ -168,7 +167,7 @@ int mvLeft(ctxObjT Ctx,
 
 static int 
 incData(ctxObjT Ctx,
-        __attribute__ ((unused)) uint flag){
+        __attribute__ ((unused)) uint flags){
 
     if (isValidCtx(Ctx) != TRUE){
         return FAIL;
@@ -185,7 +184,7 @@ incData(ctxObjT Ctx,
 
 static int 
 decData(ctxObjT Ctx,
-        __attribute__ ((unused)) uint flag){
+        __attribute__ ((unused)) uint flags){
 
     if (isValidCtx(Ctx) != TRUE){
         return FAIL;
@@ -202,7 +201,7 @@ decData(ctxObjT Ctx,
 
 static int 
 outData(ctxObjT Ctx,
-        __attribute__((unused)) uint flag){
+        __attribute__((unused)) uint flags){
 
     if (isValidCtx(Ctx) != TRUE){
         return FAIL;
@@ -214,7 +213,7 @@ outData(ctxObjT Ctx,
 
 static int 
 inpData(ctxObjT Ctx,
-        __attribute__((unused)) uint flag){
+        __attribute__((unused)) uint flags){
 
     if (isValidCtx(Ctx) != TRUE){
         return FAIL;
@@ -225,53 +224,81 @@ inpData(ctxObjT Ctx,
 }
 
 
-/* TODO
+/* TODO 
  * strips
  * getsrc: Encodes instructions from Brainfuck source file into instruction tape
- * 
+ *         Used to extract instructions from file.
  *  @source: Filename of Brainfuck source file
  *  @tape: Tape structure in which the instructions will be stored
  *  @insset Instruction set array used to identify instructions
  */
 static int
-getsrc(const char *srcFileName,
+getsrc(const char *srcFilePath,
        insObjT insObj){
 
-    FILE *srcFile = fopen(srcFileName, "r");
+    FILE *srcFile = fopen(srcFilePath, "r");
     if (srcFile == NULL){
         return FILEFAIL;
     }
-    insObj->srcdest = strdup(srcFileName);
+    insObj->srcpath = strdup(srcFilePath);
 
+    /* filter out just legit opcodes */
     for(int c = getc(srcFile); c != EOF; c = getc(srcFile)){
         if (isInstruction(c) > -1){
             pushIns(c, insObj);
         }
     }
 
-    insObj->usedlen = insObj->index;
-    insObj->index = 0;
-
     fclose(srcFile);
     return SUCCESS;
 }
 
-//TODO
-static
-insObjT initIns(const char* srcFileName){
-    insObjT newInsObj = calloc(1, sizeof(*newInsObj));
-    if (!newInsObj)
+/*  
+ *  StrToIns:
+ *
+ *  @Ctx:
+ *  @string: string containing instructions, needs to be NULL terminated!
+ */
+unsigned char*
+StrToIns(ctxObjT Ctx, const char* string){
+    //if is valid and if there are already some instructions saved...
+    if (!Ctx || !Ctx->ins || Ctx->ins->tape || !string ){
         return NULL;
+    }
+    
+    /* filter out just legit opcodes */
+    for (; *string != '\0'; string++) {
+        if (isInstruction((int) *string) > -1){
+            pushIns((int) *string, Ctx->ins);
+        }
+    }
 
-    // source file is not needed, can be added lately with strtoins()
-    if (srcFileName){
-        if (getsrc(srcFileName, newInsObj) == SUCCESS ){
+    return Ctx->ins->tape;
+}
+
+//TODO
+/* 
+ * insObjT: initiates Instruction Object
+ *
+ * @srcFilePath: file containing BF source, if NULL then instructions need to
+ *               be set with StrToIns() before execution
+ */
+static
+insObjT initIns(const char* srcFilePath){
+    insObjT newInsObj = calloc(1, sizeof(*newInsObj));
+    if (!newInsObj) {
+        fprintf(stderr, "Error allocating instruction object!\n");
+        return NULL;
+    }
+
+    // source file is not needed, can be later added with StrToIns()
+    if (srcFilePath){
+        if (getsrc(srcFilePath, newInsObj) == SUCCESS ){
             return newInsObj;
         }
         else{
-            fprintf(stderr,"Error obtaining file \'%s\'!\n", srcFileName);
-            free(newInsObj);
-            return NULL;
+            fprintf(stderr,"Error obtaining file \'%s\'!\n", srcFilePath);
+            return newInsObj;
         }
     }
 
@@ -280,14 +307,14 @@ insObjT initIns(const char* srcFileName){
 
 static
 dataObjT initData(size_t datalen){
-    dataObjT newDataObj = malloc(sizeof(*newDataObj));
+    dataObjT newDataObj = calloc(1, sizeof(*newDataObj));
     if (!newDataObj){
         fprintf(stderr, "Error allocating data object!\n");
         return NULL;
     }
     newDataObj->len = datalen;
-    newDataObj->usedlen = 0;
-    newDataObj->index = 0;
+    //newDataObj->usedlen = 0;
+    //newDataObj->index = 0;
     newDataObj->tape = calloc(newDataObj->len, sizeof(*newDataObj->tape));
     if (!newDataObj->tape){
         free(newDataObj);
@@ -316,14 +343,15 @@ stackObjT initStack(){
  *
  */
 ctxObjT
-initCtx(const char* srcFileName,
+initCtx(const char* srcFilePath,
         size_t datalen,
         uint flags){
+
     /* creating context object */
     ctxObjT newCtx = malloc(sizeof(*newCtx));
     if (!newCtx){ return NULL; }
     /* creating instruction object */
-    newCtx->ins = initIns(srcFileName);
+    newCtx->ins = initIns(srcFilePath);
     if (!newCtx->ins){ goto insCleanup; } 
     /* creating data object */
     newCtx->data = initData(datalen);
@@ -347,18 +375,18 @@ initCtx(const char* srcFileName,
 
 
 /*TODO
- * clearCtx: Frees memory allocated for tapes
+ * freeCtx: Frees memory allocated for tapes
  *
  * @tape: Tapes, initialized by initTapes() & initInsSet() to cleanup
  */
-void clearCtx(ctxObjT Ctx){
+void freeCtx(ctxObjT Ctx){
     /* if already initialized or not cleared */
     if (Ctx){
         /* clean instruction object */
         free(Ctx->ins->tape);
         Ctx->ins->tape = NULL;
-        free(Ctx->ins->srcdest);
-        Ctx->ins->srcdest = NULL;
+        free(Ctx->ins->srcpath);
+        Ctx->ins->srcpath = NULL;
         free(Ctx->ins);
         Ctx->ins = NULL;
 
@@ -421,6 +449,28 @@ int printStack(ctxObjT Ctx) {
     return SUCCESS;
 }
 
+static
+int printFlags(ctxObjT Ctx){
+    if (!Ctx || !Ctx->stack){
+        return SUCCESS;
+    }
+    uint flags = Ctx->flags;
+
+/*  if (Ctx->flags | ) printf("\n");*/
+    printf("value: %u\n", flags);
+    if (flags & CTX_RUNNING)             printf("CTX_RUNNING\n");
+    if (flags & CTX_COMPLETED)           printf("CTX_COMPLETED\n");
+    if (flags & DATA_PENDING_OUT)        printf("DATA_PENDING_OUT\n");
+    if (flags & DATA_PENDING_IN)         printf("DATA_PENDING_IN\n");
+    if (flags & DATA_ALLOW_LOOPED)       printf("DATA_ALLOW_LOOPED\n");
+    if (flags & DATA_ALLOW_OVERFLOW)     printf("DATA_ALLOW_OVERFLOW\n");
+    if (flags & DATA_ALLOW_UNDERFLOW)    printf("DATA_ALLOW_UNDERFLOW\n");
+    if (flags & DATA_DYNAMIC_GROW)       printf("DATA_DYNAMIC_GROW\n");
+    if (flags & CHECK_BRACKETS)          printf("CHECK_BRACKETS\n");
+    
+    return SUCCESS;
+}
+
 void printCtx(ctxObjT Ctx){
     if(Ctx){
         printf("\n\n");
@@ -428,19 +478,24 @@ void printCtx(ctxObjT Ctx){
         printf("ins->len = %zu\n", Ctx->ins->len);
         printf("ins->index = %zu\n", Ctx->ins->index);
         printf("ins->usedlen = %zu\n", Ctx->ins->usedlen);
-        printf("ins->srcdest = \'%s\'\n", Ctx->ins->srcdest);
+        printf("ins->srcpath = \'%s\'\n", Ctx->ins->srcpath);
         printIns(Ctx);
 
         printf("\n");
         printf("--Data Tape--\n");
         printf("data->len = %zu\n", Ctx->data->len);
         printf("data->index = %zu\n", Ctx->data->index);
+        printf("data->usedlen = %zu\n", Ctx->data->usedlen);
         printData(Ctx);
 
         printf("\n");
-        printf("--Stack tape--\n");
+        printf("--Stack Tape--\n");
         printf("stack->len = %zu\n", Ctx->stack->len);
         printStack(Ctx);
+
+        printf("\n");
+        printf("--Flags--\n");
+        printFlags(Ctx);
     }
 }
 
@@ -486,7 +541,7 @@ getMatchingEnd(insObjT insObj){
 //TODO
 static int 
 loopBeg(ctxObjT Ctx,
-        uint flag){
+        uint flags){
 
     return SUCCESS;
 }
@@ -494,7 +549,7 @@ loopBeg(ctxObjT Ctx,
 //TODO
 static int 
 loopEnd(ctxObjT Ctx,
-        uint flag){
+        uint flags){
 
     return SUCCESS;
 }

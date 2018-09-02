@@ -12,7 +12,7 @@
 #define DATAMAX    255
 #define DATAMIN      0
 #define ALLOCJMP     5
-#define DTMAXLEN 30000
+#define DATAMAXLEN 30000
 
 /* ERROR DEFINITONS */
 #define OVERFLOW    -3
@@ -35,6 +35,26 @@
 #define WHILE '['
 #define   END ']'
 
+/*  FLAGS DEFINITIONS */
+/* int size is at least 16 bits */
+typedef enum {
+    /* states of machine itself */
+    /* if you are using vim, theres a cute lil way of doing these "lists" with g Ctrl+a ;-) */
+    /* TODO Will be used in future for async execution */
+    CTX_RUNNING              =      1,
+    CTX_COMPLETED            = 1 << 2,
+    DATA_PENDING_OUT         = 1 << 3,
+    DATA_PENDING_IN          = 1 << 4,
+
+    /* Allowed to be set by user */
+    DATA_ALLOW_LOOPED        = 1 << 5,  
+    DATA_ALLOW_OVERFLOW      = 1 << 6,  
+    DATA_ALLOW_UNDERFLOW     = 1 << 7,  
+    DATA_DYNAMIC_GROW        = 1 << 8, 
+    CHECK_BRACKETS           = 1 << 9,
+
+} ctxFlags;
+
 /* DATA TYPES DECALRATIONS */
 typedef int bool;
 typedef unsigned int uint;
@@ -47,7 +67,7 @@ typedef struct _stackObjT  *stackObjT;
 
 typedef struct _stackCellT  stackCellT;
 typedef struct _insSetT     insSetT;
-typedef int    (*cmd)       (ctxObjT Ctx, uint flag);
+typedef int    (*cmd)       (ctxObjT Ctx, uint flags);
 
 /*
  * _ctxObjT      -- Object encapsulating source code and data
@@ -56,10 +76,10 @@ struct _ctxObjT {
     insObjT ins;            /* instruction object containing source code to execute */
     dataObjT data;          /* data object containing data over which instruction operate */
     stackObjT stack;        /* stack object used to store stacked bracket indexes */
-    uint flags;             /*  */
+    uint flags;             /* flags containing states of machine */
 };
 
-/*
+/* TODO - add min and max and figure out how to do it when min and max overlaps
  * _DataObjT    -- Object containing data over which InsTape operates
  */
 struct _dataObjT{
@@ -77,7 +97,7 @@ struct _insObjT{
     size_t index;           /* index of current instruction */
     size_t usedlen;         /* furthest visited array index */                 
     size_t len;             /* length of array */                   
-    char* srcdest;          /* filename of inputed BrainFuck source code */
+    char* srcpath;          /* filepath of inputed BrainFuck source code */
 };
 
 /*
@@ -107,8 +127,9 @@ struct _insSetT {
 
 
 /* FUNCTION DECLARATIONS */
-ctxObjT initCtx(const char* srcFileName, size_t datalen, uint flags);
+ctxObjT initCtx(const char* srcFilePath, size_t datalen, uint flags);
 void printCtx(ctxObjT Ctx);
-void clearCtx(ctxObjT Ctx);
+void freeCtx(ctxObjT Ctx);
+unsigned char* StrToIns(ctxObjT Ctx, const char* string);
 
 #endif
