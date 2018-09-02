@@ -5,10 +5,10 @@
 #include <string.h>
 
 /* VALUE DEFINITIONS */
-#define SUCCESS      0
+#define SUCCESS      2
 #define FAIL        -2
-#define TRUE         0
-#define FALSE       -1
+#define TRUE         1
+#define FALSE        0 
 #define DATAMAX    255
 #define DATAMIN      0
 #define ALLOCJMP     5
@@ -34,6 +34,11 @@
 #define  STDI ','
 #define WHILE '['
 #define   END ']'
+
+#define BIT_TOGGLE(NUM, N)    (NUM ^= (N))
+#define BIT_SET_TRUE(NUM, N)  (NUM |= (N))
+#define BIT_SET_FALSE(NUM, N) (NUM &= ~(N))
+
 
 /*  FLAGS DEFINITIONS */
 /* int size is at least 16 bits */
@@ -131,5 +136,6 @@ ctxObjT initCtx(const char* srcFilePath, size_t datalen, uint flags);
 void printCtx(ctxObjT Ctx);
 void freeCtx(ctxObjT Ctx);
 unsigned char* StrToIns(ctxObjT Ctx, const char* string);
+void printHelp();
 
 #endif

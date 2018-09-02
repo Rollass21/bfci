@@ -122,7 +122,7 @@ int isInstruction(int c) {
             return i;
     }
 
-    return FALSE; 
+    return -1; 
 }
 
 /* INSTRUCTION SET FUNCTIONS */
@@ -131,7 +131,7 @@ static
 int mvRight(ctxObjT Ctx,
             __attribute__((unused)) uint flags){
 
-    if (isValidCtx(Ctx) != TRUE){
+    if (!isValidCtx(Ctx)){
         return FAIL;
     }
 
@@ -150,7 +150,7 @@ static
 int mvLeft(ctxObjT Ctx,
            __attribute__((unused)) uint flags){
 
-    if (isValidCtx(Ctx) != TRUE){
+    if (!isValidCtx(Ctx)){
         return FAIL;
     }
 
@@ -169,7 +169,7 @@ static int
 incData(ctxObjT Ctx,
         __attribute__ ((unused)) uint flags){
 
-    if (isValidCtx(Ctx) != TRUE){
+    if (!isValidCtx(Ctx)){
         return FAIL;
     }
     /* Value loop around */
@@ -186,7 +186,7 @@ static int
 decData(ctxObjT Ctx,
         __attribute__ ((unused)) uint flags){
 
-    if (isValidCtx(Ctx) != TRUE){
+    if (!isValidCtx(Ctx)){
         return FAIL;
     }
     /* Value loop around */
@@ -203,7 +203,7 @@ static int
 outData(ctxObjT Ctx,
         __attribute__((unused)) uint flags){
 
-    if (isValidCtx(Ctx) != TRUE){
+    if (!isValidCtx(Ctx)){
         return FAIL;
     }
 
@@ -215,7 +215,7 @@ static int
 inpData(ctxObjT Ctx,
         __attribute__((unused)) uint flags){
 
-    if (isValidCtx(Ctx) != TRUE){
+    if (!isValidCtx(Ctx)){
         return FAIL;
     }
 
@@ -291,6 +291,7 @@ insObjT initIns(const char* srcFilePath){
         return NULL;
     }
 
+    newInsObj->srcpath = NULL;
     // source file is not needed, can be later added with StrToIns()
     if (srcFilePath){
         if (getsrc(srcFilePath, newInsObj) == SUCCESS ){
@@ -353,6 +354,8 @@ initCtx(const char* srcFilePath,
     /* creating instruction object */
     newCtx->ins = initIns(srcFilePath);
     if (!newCtx->ins){ goto insCleanup; } 
+    /* checking if file was loaded correctly */
+    if (srcFilePath && !newCtx->ins->srcpath){ goto insCleanup; }
     /* creating data object */
     newCtx->data = initData(datalen);
     if (!newCtx->data){ goto dataCleanup; }
@@ -408,11 +411,24 @@ void freeCtx(ctxObjT Ctx){
     }
 }
 
+
+void printHelp(){
+    const char* helptext = "\
+Name:      BrainFuck C Interpreter\n\
+Usage:     bfci [-options ...]\n\
+Options:\n\
+           -i <string>     interpret given string as if it was a file\n\
+           -h              display this screen\n\
+           -f <filepath>   interpret given BF source file\n";
+
+    printf("%s", helptext);
+}
+
 /* DIAGNOSTICS TOOLS */
 static
-int printIns(ctxObjT Ctx){
+void printIns(ctxObjT Ctx){
     if (!Ctx || !Ctx->ins){
-        return FAIL;
+        return;
     }
 
     for(size_t i = 0; i < Ctx->ins->usedlen; i++){
@@ -420,60 +436,62 @@ int printIns(ctxObjT Ctx){
     }
     printf("\n");
 
-    return SUCCESS;
+    return;
 }
 
 static
-int printData(ctxObjT Ctx){
+void printData(ctxObjT Ctx){
     if (!Ctx || !Ctx->data){
-        return SUCCESS;
+        return;
     }
 
     for(size_t i = 0; i < Ctx->data->usedlen; i++){
         printf("[%3d] ", Ctx->data->tape[i]);
     }
 
-    return SUCCESS;
+    return;
 }
 
 static
-int printStack(ctxObjT Ctx) {
+void printStack(ctxObjT Ctx) {
     if (!Ctx || !Ctx->stack){
-        return SUCCESS;
+        return;
     }
 
     for(size_t i = 0; i < Ctx->stack->len; i++){
         printf("start[%zu] end[%zu]\n",Ctx->stack->tape[i].start, Ctx->stack->tape[i].end);
     }
 
-    return SUCCESS;
+    return;
 }
 
 static
-int printFlags(ctxObjT Ctx){
+void printFlags(ctxObjT Ctx){
     if (!Ctx || !Ctx->stack){
-        return SUCCESS;
+        return;
     }
     uint flags = Ctx->flags;
 
 /*  if (Ctx->flags | ) printf("\n");*/
     printf("value: %u\n", flags);
-    if (flags & CTX_RUNNING)             printf("CTX_RUNNING\n");
-    if (flags & CTX_COMPLETED)           printf("CTX_COMPLETED\n");
-    if (flags & DATA_PENDING_OUT)        printf("DATA_PENDING_OUT\n");
-    if (flags & DATA_PENDING_IN)         printf("DATA_PENDING_IN\n");
-    if (flags & DATA_ALLOW_LOOPED)       printf("DATA_ALLOW_LOOPED\n");
-    if (flags & DATA_ALLOW_OVERFLOW)     printf("DATA_ALLOW_OVERFLOW\n");
-    if (flags & DATA_ALLOW_UNDERFLOW)    printf("DATA_ALLOW_UNDERFLOW\n");
-    if (flags & DATA_DYNAMIC_GROW)       printf("DATA_DYNAMIC_GROW\n");
-    if (flags & CHECK_BRACKETS)          printf("CHECK_BRACKETS\n");
+
+    printf("%u CTX_RUNNING\n",          (flags & CTX_RUNNING)          ? 1 : 0);
+    printf("%u CTX_RUNNING\n",          (flags & CTX_RUNNING)          ? 1 : 0); 
+    printf("%u CTX_COMPLETED\n",        (flags & CTX_COMPLETED)        ? 1 : 0);
+    printf("%u DATA_PENDING_OUT\n",     (flags & DATA_PENDING_OUT)     ? 1 : 0);
+    printf("%u DATA_PENDING_IN\n",      (flags & DATA_PENDING_IN)      ? 1 : 0);
+    printf("%u DATA_ALLOW_LOOPED\n",    (flags & DATA_ALLOW_LOOPED)    ? 1 : 0);
+    printf("%u DATA_ALLOW_OVERFLOW\n",  (flags & DATA_ALLOW_OVERFLOW)  ? 1 : 0);
+    printf("%u DATA_ALLOW_UNDERFLOW\n", (flags & DATA_ALLOW_UNDERFLOW) ? 1 : 0);
+    printf("%u DATA_DYNAMIC_GROW\n",    (flags & DATA_DYNAMIC_GROW)    ? 1 : 0);
+    printf("%u CHECK_BRACKETS\n",       (flags & CHECK_BRACKETS)       ? 1 : 0);
     
-    return SUCCESS;
+    return;
 }
 
 void printCtx(ctxObjT Ctx){
     if(Ctx){
-        printf("\n\n");
+        printf("\n");
         printf("--Instruction Tape--\n");
         printf("ins->len = %zu\n", Ctx->ins->len);
         printf("ins->index = %zu\n", Ctx->ins->index);
@@ -618,9 +636,9 @@ int loop(TapesPtr tape, stackObjT stack){
  *
  * @tape: Tape structure of which one instruction tape will be executed
  */
-static
+/*static
 int execute(ctxObjT Ctx){
-    /*
+
     if (tape == NULL){
         return FAIL; 
     }
@@ -630,10 +648,10 @@ int execute(ctxObjT Ctx){
     if (ins== STD_O || ins== STD_I) return        IO(tape);
     if (ins==  MV_R || ins==  MV_L) return      move(tape);
     if (ins== WHILE || ins==   END) return      loop(tape, stack);
-    */
 
     return NDFINS;
 }
+*/
 
 //TODO
 /*int run(TapesPtr tape){
@@ -671,7 +689,7 @@ SPush(stackObjT stack, size_t startindex, size_t endindex){
 
     if (startindex == stack->tape[stack->len - 1].start
         || endindex == stack->tape[stack->len - 1].end)
-        return TRUE;
+        return SUCCESS;
 
     stack->tape = realloc(stack->tape, ++stack->len * sizeof(*stack->tape));
     if (stack->tape == NULL) {
