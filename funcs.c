@@ -1,13 +1,13 @@
 #include "bfci.h"
 
-static int mvRight(ctxObjT, uint flags);
-static int  mvLeft(ctxObjT, uint flags);
-static int incData(ctxObjT, uint flags);
-static int decData(ctxObjT, uint flags);
-static int outData(ctxObjT, uint flags);
-static int inpData(ctxObjT, uint flags);
-static int loopBeg(ctxObjT, uint flags);
-static int loopEnd(ctxObjT, uint flags);
+static int mvRight(ctxObjT);
+static int  mvLeft(ctxObjT);
+static int incData(ctxObjT);
+static int decData(ctxObjT);
+static int outData(ctxObjT);
+static int inpData(ctxObjT);
+static int loopBeg(ctxObjT);
+static int loopEnd(ctxObjT);
 
 /* Instruction set */
 static const insSetT insSet[] = {
@@ -47,7 +47,7 @@ static const insSetT insSet[] = {
     },
 
     {.name    = "While loop end",
-     .opcode  = END,
+     .opcode  = DO,
      .command = loopEnd,
     },
     {.name = NULL}
@@ -55,7 +55,7 @@ static const insSetT insSet[] = {
 
 /* HELPER FUNCTIONS */
 
-/* TODO
+/* 
  * jmp()
  *
  * @tape - ...
@@ -65,15 +65,19 @@ static const insSetT insSet[] = {
  * On correct jump, returns destination index.
  */
 static
-unsigned int jmp(insObjT insObj, size_t dest){
-    if (insObj){
+int jmp(insObjT insObj, size_t dest){
+    if (!insObj){
         return FAIL;
     }
     
-    if (dest < insObj->usedlen)
-        insObj->index = dest;
+    if (dest >= insObj->usedlen) {
+        fprintf(stderr, "Jump destination to unused instruction tape index!\n");
+        return NDFUSAGE;
+    }
 
-    return dest;
+    insObj->index = dest;
+
+    return SUCCESS;
 } 
 
 static
@@ -82,6 +86,7 @@ int pushIns(int c, insObjT insObj){
         return FAIL;
     }
 
+    // potential resize
     if (insObj->usedlen + 1 > insObj->len){
         insObj->len += ALLOCJMP;
 
@@ -94,6 +99,8 @@ int pushIns(int c, insObjT insObj){
         }
         insObj = insObjCopy;
     }
+
+    // adding instruction
     insObj->tape[insObj->usedlen++] = c;
 
     return SUCCESS;
@@ -117,7 +124,7 @@ isValidCtx(ctxObjT Ctx){
  */
 static
 int isInstruction(int c) {
-    for(int i = 0; insSet[i].name != NULL; i++){
+    for (int i = 0; insSet[i].name != NULL; i++){
         if (insSet[i].opcode == c)
             return i;
     }
@@ -127,29 +134,33 @@ int isInstruction(int c) {
 
 /* INSTRUCTION SET FUNCTIONS */
 
+//TODO
 static
-int mvRight(ctxObjT Ctx,
-            __attribute__((unused)) uint flags){
-
+int mvRight(ctxObjT Ctx){
     if (!isValidCtx(Ctx)){
         return FAIL;
     }
 
     /* Loop around */
-    if (Ctx->data->index + 1 > Ctx->data->len){
+    if (Ctx->data->index + 1 == Ctx->data->len){
         Ctx->data->index = 0;
         return SUCCESS;
     }
-    /* Casual move right */
-    ++Ctx->data->index;
+    
+    /* Trace furthest index */
+    if (Ctx->data->index + 1 >= Ctx->data->usedlen){
+        Ctx->data->usedlen = Ctx->data->index + 1;
+    }
+
+    /* Casual move right once everything is figured out */
+    Ctx->data->index++;
 
     return SUCCESS;
 }
 
+//TODO
 static
-int mvLeft(ctxObjT Ctx,
-           __attribute__((unused)) uint flags){
-
+int mvLeft(ctxObjT Ctx){
     if (!isValidCtx(Ctx)){
         return FAIL;
     }
@@ -159,23 +170,25 @@ int mvLeft(ctxObjT Ctx,
         Ctx->data->index = Ctx->data->len;
         return SUCCESS;
     }
-    /* Casual move left */
-    --Ctx->data->index;
+    
+    /* Casual move left once everything is figured out */
+    Ctx->data->index--;
 
     return SUCCESS;
 }
 
 static int 
-incData(ctxObjT Ctx,
-        __attribute__ ((unused)) uint flags){
-
+incData(ctxObjT Ctx){
     if (!isValidCtx(Ctx)){
         return FAIL;
     }
+
     /* Value loop around */
     if (Ctx->data->tape[Ctx->data->index] == DATAMAX) {
         Ctx->data->tape[Ctx->data->index] = DATAMIN;
+        return SUCCESS;
     }
+
     /* Casual increment */
     Ctx->data->tape[Ctx->data->index]++;
 
@@ -183,16 +196,17 @@ incData(ctxObjT Ctx,
 }
 
 static int 
-decData(ctxObjT Ctx,
-        __attribute__ ((unused)) uint flags){
-
+decData(ctxObjT Ctx){
     if (!isValidCtx(Ctx)){
         return FAIL;
     }
+
     /* Value loop around */
     if (Ctx->data->tape[Ctx->data->index] == DATAMIN) {
         Ctx->data->tape[Ctx->data->index] = DATAMAX;
+        return SUCCESS;
     }
+
     /* Casual decrement */
     Ctx->data->tape[Ctx->data->index]--;
 
@@ -200,9 +214,7 @@ decData(ctxObjT Ctx,
 }
 
 static int 
-outData(ctxObjT Ctx,
-        __attribute__((unused)) uint flags){
-
+outData(ctxObjT Ctx){
     if (!isValidCtx(Ctx)){
         return FAIL;
     }
@@ -212,9 +224,7 @@ outData(ctxObjT Ctx,
 }
 
 static int 
-inpData(ctxObjT Ctx,
-        __attribute__((unused)) uint flags){
-
+inpData(ctxObjT Ctx){
     if (!isValidCtx(Ctx)){
         return FAIL;
     }
@@ -243,7 +253,7 @@ getsrc(const char *srcFilePath,
     insObj->srcpath = strdup(srcFilePath);
 
     /* filter out just legit opcodes */
-    for(int c = getc(srcFile); c != EOF; c = getc(srcFile)){
+    for (int c = getc(srcFile); c != EOF; c = getc(srcFile)){
         if (isInstruction(c) > -1){
             pushIns(c, insObj);
         }
@@ -259,7 +269,7 @@ getsrc(const char *srcFilePath,
  *  @Ctx:
  *  @string: string containing instructions, needs to be NULL terminated!
  */
-unsigned char*
+uchar*
 StrToIns(ctxObjT Ctx, const char* string){
     //if is valid and if there are already some instructions saved...
     if (!Ctx || !Ctx->ins || Ctx->ins->tape || !string ){
@@ -314,27 +324,26 @@ dataObjT initData(size_t datalen){
         return NULL;
     }
     newDataObj->len = datalen;
-    //newDataObj->usedlen = 0;
-    //newDataObj->index = 0;
+
     newDataObj->tape = calloc(newDataObj->len, sizeof(*newDataObj->tape));
     if (!newDataObj->tape){
         free(newDataObj);
         fprintf(stderr, "Error allocating data tape of length %zu!\n", datalen);
         return NULL;
     }
+    newDataObj->usedlen = 1;
 
     return newDataObj;
 }
 
 static
 stackObjT initStack(){
-    stackObjT newStackObj = malloc(sizeof(*newStackObj));
+    stackObjT newStackObj = calloc(1, sizeof(*newStackObj));
     if (!newStackObj){
         fprintf(stderr, "Error allocating stack object!\n");
         return NULL;
     }
     newStackObj->tape = NULL;
-    newStackObj->len = 0;
 
     return newStackObj;
 } 
@@ -419,7 +428,8 @@ Usage:     bfci [-options ...]\n\
 Options:\n\
            -i <string>     interpret given string as if it was a file\n\
            -h              display this screen\n\
-           -f <filepath>   interpret given BF source file\n";
+           -t <filepath>   interpret given BF source file target\n";
+           //-f <flags>      set flags based on decimal <flags> value\n";
 
     printf("%s", helptext);
 }
@@ -475,7 +485,6 @@ void printFlags(ctxObjT Ctx){
 /*  if (Ctx->flags | ) printf("\n");*/
     printf("value: %u\n", flags);
 
-    printf("%u CTX_RUNNING\n",          (flags & CTX_RUNNING)          ? 1 : 0);
     printf("%u CTX_RUNNING\n",          (flags & CTX_RUNNING)          ? 1 : 0); 
     printf("%u CTX_COMPLETED\n",        (flags & CTX_COMPLETED)        ? 1 : 0);
     printf("%u DATA_PENDING_OUT\n",     (flags & DATA_PENDING_OUT)     ? 1 : 0);
@@ -484,7 +493,7 @@ void printFlags(ctxObjT Ctx){
     printf("%u DATA_ALLOW_OVERFLOW\n",  (flags & DATA_ALLOW_OVERFLOW)  ? 1 : 0);
     printf("%u DATA_ALLOW_UNDERFLOW\n", (flags & DATA_ALLOW_UNDERFLOW) ? 1 : 0);
     printf("%u DATA_DYNAMIC_GROW\n",    (flags & DATA_DYNAMIC_GROW)    ? 1 : 0);
-    printf("%u CHECK_BRACKETS\n",       (flags & CHECK_BRACKETS)       ? 1 : 0);
+    printf("%u PRINT_DIAGNOSTICS\n",    (flags & PRINT_DIAGNOSTICS)    ? 1 : 0);
     
     return;
 }
@@ -505,6 +514,7 @@ void printCtx(ctxObjT Ctx){
         printf("data->index = %zu\n", Ctx->data->index);
         printf("data->usedlen = %zu\n", Ctx->data->usedlen);
         printData(Ctx);
+        printf("\n");
 
         printf("\n");
         printf("--Stack Tape--\n");
@@ -518,205 +528,241 @@ void printCtx(ctxObjT Ctx){
 }
 
 
-
-/* TODO
- * getMatchingEnd()
- *
- *  @tape - Pointer to structure containing initialized data & instruction tapes
- *
- *  Returns index of closing bracket paired with the one currently under
- *  instruction tape index.
- *  If pairing bracket not found, returns 0.
- */
-static size_t
-getMatchingEnd(insObjT insObj){
-    if (insObj || insObj->tape) {
-        return FAIL;
+// XXX ins->usedlen is not really the described 'last used index number'
+// TODO fix ins->usedlen incrementing
+static
+bool isBalanced(insObjT insObj){
+    if (!insObj || !insObj->tape || !insObj->usedlen) {
+        return 0;
     }
 
-    int count = 1;
-    unsigned int currindex = insObj->index;
-    
-    /* Search for matching brace until end of instruction tape */
-    while (count != 0 && ++currindex < insObj->usedlen ){
+    size_t currindex = insObj->index;
+    long int count = 0;
+
+    /* if count gets below zero, closing bracket was used without pair opening bracket */
+    while (count >= 0 && ++currindex < insObj->usedlen){
         switch (insObj->tape[currindex]){
             case WHILE: count++;
                         break;
 
-            case   END: count--;
+            case    DO: count--;
                         break;
         }
     }
 
-    if (count) {
+    /* balanced brackets will set count to 0, more opening brackets would leave count>0 */
+    return (count) ? FALSE : TRUE;
+}
+/* 
+ * getMatchingEnd()
+ *
+ * @insObj - Pointer to structure containing instruction tape
+ *
+ * Returns index of closing bracket paired with the one currently under
+ * instruction tape index.
+ * If pairing or starting bracket not found, or unvalid insObject, returns 0.
+ */
+static size_t
+getMatchingClosing(insObjT insObj){
+    if (!insObj || !insObj->tape || !insObj->usedlen) {
         return 0;
     }
 
-    return currindex;
+    size_t currindex = insObj->index;
+    /* maybe too small? time will tell */
+    size_t seen = 0;
+
+    /* Search for matching brace until end of instruction tape */
+    do {
+        switch (insObj->tape[currindex]){
+            case WHILE: seen++;
+                        break;
+
+            case    DO: seen--;
+                        break;
+        }
+    } while (seen && ++currindex < insObj->usedlen);
+    
+    return (!seen) ? currindex : 0;
 }
 
+static int
+LIFOPush(ctxObjT Ctx,
+         size_t startindex,
+         size_t endindex){
 
-//TODO
-static int 
-loopBeg(ctxObjT Ctx,
-        uint flags){
-
-    return SUCCESS;
-}
-
-//TODO
-static int 
-loopEnd(ctxObjT Ctx,
-        uint flags){
-
-    return SUCCESS;
-}
-
-/* 
- * loop()
- *
- * @tape - ...
- * @stack - Pointer to stack that corresponds to given @tape
- *
- */
-/*
-static
-int loop(TapesPtr tape, stackObjT stack){
-    if (tape == NULL || stack == NULL){
+    if (!isValidCtx(Ctx)) {
         return FAIL;
     }
     
-    int ret = SUCCESS;
-
-    InsTapePtr insTp = tape->ins;
-    DataTapePtr dataTp = tape->data;
+    //TODO add overflow protection, either check defined MAX, or if len > len+1 
+    // inc stack->len
+    // reallocate stack->tape to sizeof(bracket pair) * stack->len
+    size_t memSize = ++Ctx->stack->len * sizeof(*Ctx->stack->tape);
+    stackCellT* tapeCopy = realloc(Ctx->stack->tape, memSize);
     
-    switch(insTp->tape[insTp->index]){
-        case WHILE:;
-            unsigned int start = insTp->index;
-            unsigned int end = getMatchingEnd(tape);
-            if (end == 0) {
-                //freeStack(stack);
-                return NOLOOPEND;
-            }
-            SPush(stack, start, end);
-            
-            // If current data == 0, jump to END
-            if (dataTp->tape[dataTp->index] == 0) {
-                jmp(tape, stack->tape[stack->len - 1].end);
-                SPop(stack);
-            }
-
-            break;
-
-        case END:
-            // If stack is empty
-            if (stack->len == 0) {
-                return NOLOOPSTART;    
-            }
-            // If current data != 0, jump to WHILE start
-            if (dataTp->tape[dataTp->index] != 0) {
-                jmp(tape, stack->tape[stack->len - 1].start);
-            }
-
-            break;
-
-        default:
-            ret = NDFINS;
-    }
-
-    return ret;
-}
-
-*/
-/* TODO
- * execute: Takes care of executing the right instruction
- *          - for now the values are hardcodec, in future there will be function
- *            array containing each one of the functions
- *
- * @tape: Tape structure of which one instruction tape will be executed
- */
-/*static
-int execute(ctxObjT Ctx){
-
-    if (tape == NULL){
-        return FAIL; 
-    }
-    int ins = tape->ins->tape[tape->ins->index];
-
-    if (ins==   INC || ins==   DEC) return changeval(tape);
-    if (ins== STD_O || ins== STD_I) return        IO(tape);
-    if (ins==  MV_R || ins==  MV_L) return      move(tape);
-    if (ins== WHILE || ins==   END) return      loop(tape, stack);
-
-    return NDFINS;
-}
-*/
-
-//TODO
-/*int run(TapesPtr tape){
-    if (tape == NULL){
-        return FAIL; }
-
-    stackObjT stack = initStack();
-    if (stack == NULL)
+    // error check for null
+    if (!tapeCopy) {
+        Ctx->stack->len--;
         return ALLOCFAIL;
-
-    InsTapePtr insTp = tape->ins;
-    int ret = SUCCESS;
-
-    for(insTp->index = 0; insTp->index < insTp->usedlen; insTp->index++){
-        if ((ret = execute(tape, stack)) != SUCCESS)
-            return ret;
     }
-    return ret;
+    // succesfull alloc
+    Ctx->stack->tape = tapeCopy;
+
+    // set new pair with provided values
+    size_t stackIndex = Ctx->stack->len - 1;
+    Ctx->stack->tape[stackIndex].start = startindex;
+    Ctx->stack->tape[stackIndex].end = endindex;
+
+    return SUCCESS;
 }
-*/
 
-static int
-SPush(stackObjT stack, size_t startindex, size_t endindex){
-    if (stack == NULL)
-        stack = initStack();
+/*
+ * TODO - do it so there doesnt have to be and if() whether 
+ * Doesnt push if the arg values are equal to last stored values in stack
+ * Doesn push when..
+ */
+static int 
+LIFOPushNew(ctxObjT Ctx,
+            size_t startindex,
+            size_t endindex){
 
-    if (stack->tape == NULL){
-        stack->len = 1;
-        stack->tape = malloc(stack->len * sizeof(*stack->tape));
-        if (stack->tape == NULL) {
-            stack->len = 0;        
-            return FAIL;
+    if (!isValidCtx(Ctx)) {
+        return FAIL;
+    }
+
+    // if there already something is, check if that something == args
+    if (Ctx->stack->len) {
+        size_t stackIndex = Ctx->stack->len - 1;
+
+        /* if the same bracket pair is already written in stack, do nothing */
+        if (startindex == Ctx->stack->tape[stackIndex].start ||
+            endindex   == Ctx->stack->tape[stackIndex].end) {
+            return SUCCESS;
         }
     }
 
-    if (startindex == stack->tape[stack->len - 1].start
-        || endindex == stack->tape[stack->len - 1].end)
-        return SUCCESS;
-
-    stack->tape = realloc(stack->tape, ++stack->len * sizeof(*stack->tape));
-    if (stack->tape == NULL) {
-        //freeStack(stack);
-        return FAIL;
-    }
-
-    stack->tape[stack->len - 1].start = startindex;
-    stack->tape[stack->len - 1].end = endindex;
-    
-    return SUCCESS;
+    return LIFOPush(Ctx, startindex, endindex);
 }
 
 static int
-SPop(stackObjT stack){
-    //little too explicit i know
-    if (stack == NULL && stack->len == 0 && stack->tape == NULL) {
+LIFOPop(ctxObjT Ctx){
+
+    if (!isValidCtx(Ctx)) {
         return FAIL;
     }
-    
-    stack->tape = realloc(stack->tape, --stack->len * sizeof(*stack->tape));
-    if (stack->tape == NULL) {
-        // when at 0 byte size, realloc already frees the array
-        //freeStack(stack);
+
+    //figure out if you are able to pop something, if not return;
+    if (!Ctx->stack->len) {
         return FAIL;
+    }
+        
+    // realloc stack-tape to sizeof(bracket pair) * --stack->len
+    size_t memSize = --Ctx->stack->len * sizeof(*Ctx->stack->tape);
+    stackCellT* tapeCopy = realloc(Ctx->stack->tape, memSize);
+
+    // error check for null
+    if (!tapeCopy) {
+        Ctx->stack->len++;
+        return ALLOCFAIL;             
     }
 
     return SUCCESS;
-
 }
+
+//TODO
+static int 
+loopBeg(ctxObjT Ctx){
+    if(!isValidCtx(Ctx)){
+        return FAIL;
+    }
+    size_t startindex = Ctx->ins->index;
+    size_t endindex   = getMatchingClosing(Ctx->ins);
+    if (!endindex) {
+        return NOLOOPEND;
+    }
+
+    /* TODO push NEW indexes */
+    LIFOPushNew(Ctx, startindex, endindex);
+
+    /* JUMP RULE */
+    /* Jump to closing bracket when data==0 */
+    if (Ctx->data->tape[Ctx->data->index] == 0) {
+        jmp(Ctx->ins, Ctx->stack->tape[Ctx->stack->len - 1].end); 
+    }
+
+    /* if jump rule is FALSE, just let programm continue */
+    return SUCCESS;
+}
+
+//TODO
+static int 
+loopEnd(ctxObjT Ctx){
+    if(!isValidCtx(Ctx)){
+        return FAIL;
+    }
+
+    /* JUMP RULE */
+    /* Jump back to stored opening bracket when data!=0 */
+    if (Ctx->data->tape[Ctx->data->index] != 0) {
+        if (!Ctx->stack->len) {
+            return NOLOOPSTART;
+        }
+        /* if there is openings bracket to jump to, do jmp() */
+        jmp(Ctx->ins, Ctx->stack->tape[Ctx->stack->len - 1].start);         
+        return SUCCESS;
+    }
+
+    LIFOPop(Ctx);
+    /* if jump rule is FALSE, just let programm continue */
+    return SUCCESS;
+}
+
+/* TODO
+ * execute: Takes care of executing the right instruction
+ *          Executes one instruction at Ctx->ins->index
+ *
+ * @tape: Tape structure of which one instruction tape will be executed
+ */
+static
+int execute(ctxObjT Ctx){
+    if (!isValidCtx(Ctx)){
+        return FAIL;
+    }
+
+    uchar currIns = Ctx->ins->tape[Ctx->ins->index];
+    int currCMDIndex = isInstruction(currIns);
+    cmd currCMD = insSet[currCMDIndex].command;
+
+    return currCMD(Ctx);
+}
+
+int
+interpret(ctxObjT Ctx){
+    if (!isValidCtx(Ctx)){
+        return FAIL; 
+    }
+    
+    // before interpretation
+    /* syntax checks */
+    if(!isBalanced(Ctx->ins)){
+        fprintf(stderr, "Unbalanced brackets!\n");    
+        return FAIL;
+    }
+    BIT_SET_TRUE(Ctx->flags, CTX_RUNNING);
+
+    // interpretation
+    for(Ctx->ins->index = 0; Ctx->ins->index < Ctx->ins->usedlen; Ctx->ins->index++){
+        execute(Ctx);
+    }
+    
+    // after interpretation
+    BIT_SET_TRUE(Ctx->flags, CTX_COMPLETED);
+    BIT_SET_FALSE(Ctx->flags, CTX_RUNNING);
+
+    if (Ctx->flags & PRINT_DIAGNOSTICS)
+        printCtx(Ctx);
+
+    return SUCCESS;
+}
+

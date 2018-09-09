@@ -7,6 +7,7 @@ int main(int argc, char **argv){
     bool given_option_i = FALSE;
     char* source = "bfSrcs/helloworld.bf";
     char* string = "";
+    uint flags = PRINT_DIAGNOSTICS;
     int option;
 
     opterr = 0;
@@ -15,13 +16,14 @@ int main(int argc, char **argv){
         printHelp();
     }
 
-    while ((option = getopt(argc, argv, "hf:i:")) != -1) {
+    //TODO add a way to alter flags through cli
+    while ((option = getopt(argc, argv, "ht:i:")) != -1) {
         switch (option){
             case 'h':
                 printHelp();
                 break;
 
-            case 'f':
+            case 't':
                 filecount++;
                 if (given_option_i) {
                     fprintf(stderr, "Using both '%s' and '%s' isn't currently possible!\n", "-i", "-t");
@@ -41,7 +43,7 @@ int main(int argc, char **argv){
 
             case '?':
                 switch(optopt){
-                    case 'f':
+                    case 't':
                         fprintf(stderr, "Option '-%c' requires %s argument!\n", optopt, "filepath");
                         break;
                         
@@ -60,11 +62,13 @@ int main(int argc, char **argv){
     }
 
     if (given_option_i) {
-        Ctx = initCtx(NULL, DATAMAXLEN, 0);
+        Ctx = initCtx(NULL, DATAMAXLEN, flags);
         StrToIns(Ctx, string);
+        interpret(Ctx);
     }
     if (filecount > 0) {
-        Ctx = initCtx(source, DATAMAXLEN, 0);
+        Ctx = initCtx(source, DATAMAXLEN, flags);
+        interpret(Ctx);
     }
 
    /* BIT_SET_TRUE(Ctx->flags, CTX_RUNNING);
@@ -73,8 +77,6 @@ int main(int argc, char **argv){
 
     * char* string = "TEST +-,.[]>< abcdABCD0123456789";
     */
-
-    printCtx(Ctx);
     
     freeCtx(Ctx);
 

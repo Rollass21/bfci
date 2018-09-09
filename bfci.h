@@ -33,8 +33,9 @@
 #define  STDO '.'
 #define  STDI ','
 #define WHILE '['
-#define   END ']'
+#define    DO ']'
 
+/* MACROS */
 #define BIT_TOGGLE(NUM, N)    (NUM ^= (N))
 #define BIT_SET_TRUE(NUM, N)  (NUM |= (N))
 #define BIT_SET_FALSE(NUM, N) (NUM &= ~(N))
@@ -46,23 +47,24 @@ typedef enum {
     /* states of machine itself */
     /* if you are using vim, theres a cute lil way of doing these "lists" with g Ctrl+a ;-) */
     /* TODO Will be used in future for async execution */
-    CTX_RUNNING              =      1,
-    CTX_COMPLETED            = 1 << 2,
-    DATA_PENDING_OUT         = 1 << 3,
-    DATA_PENDING_IN          = 1 << 4,
+    CTX_RUNNING              =       1,
+    CTX_COMPLETED            = 1 <<  2,
+    DATA_PENDING_OUT         = 1 <<  3,
+    DATA_PENDING_IN          = 1 <<  4,
 
     /* Allowed to be set by user */
-    DATA_ALLOW_LOOPED        = 1 << 5,  
-    DATA_ALLOW_OVERFLOW      = 1 << 6,  
-    DATA_ALLOW_UNDERFLOW     = 1 << 7,  
-    DATA_DYNAMIC_GROW        = 1 << 8, 
-    CHECK_BRACKETS           = 1 << 9,
+    DATA_ALLOW_LOOPED        = 1 <<  5,  
+    DATA_ALLOW_OVERFLOW      = 1 <<  6,  
+    DATA_ALLOW_UNDERFLOW     = 1 <<  7,  
+    DATA_DYNAMIC_GROW        = 1 <<  8, 
+    PRINT_DIAGNOSTICS        = 1 <<  9,
 
 } ctxFlags;
 
 /* DATA TYPES DECALRATIONS */
-typedef int bool;
+typedef unsigned char uchar;
 typedef unsigned int uint;
+typedef int bool;
 
 /* {*}Obj are always pointers and need to be initialized */
 typedef struct _ctxObjT     *ctxObjT;
@@ -72,7 +74,7 @@ typedef struct _stackObjT  *stackObjT;
 
 typedef struct _stackCellT  stackCellT;
 typedef struct _insSetT     insSetT;
-typedef int    (*cmd)       (ctxObjT Ctx, uint flags);
+typedef int    (*cmd)       (ctxObjT Ctx);
 
 /*
  * _ctxObjT      -- Object encapsulating source code and data
@@ -88,7 +90,7 @@ struct _ctxObjT {
  * _DataObjT    -- Object containing data over which InsTape operates
  */
 struct _dataObjT{
-    unsigned char *tape;    /* data array */                              
+    uchar *tape;    /* data array */                              
     size_t index;           /* index of current data block */
     size_t usedlen;         /* furthest visited array index */                 
     size_t len;             /* length of array */                   
@@ -98,7 +100,7 @@ struct _dataObjT{
  * InsObjT      -- Object containing BrainFuck source code
  */
 struct _insObjT{
-    unsigned char *tape;    /* instruction array */                              
+    uchar *tape;    /* instruction array */                              
     size_t index;           /* index of current instruction */
     size_t usedlen;         /* furthest visited array index */                 
     size_t len;             /* length of array */                   
@@ -117,7 +119,7 @@ struct _stackCellT {
  * _stackObjT   -- Object containing 
  */
 struct _stackObjT {
-    size_t len;             /* number of cells in stack array*/
+    size_t len;             /* number of cells in stack array */
     stackCellT *tape;       /* stack array containing bracket pairs */
 };
 
@@ -135,7 +137,7 @@ struct _insSetT {
 ctxObjT initCtx(const char* srcFilePath, size_t datalen, uint flags);
 void printCtx(ctxObjT Ctx);
 void freeCtx(ctxObjT Ctx);
-unsigned char* StrToIns(ctxObjT Ctx, const char* string);
+uchar* StrToIns(ctxObjT Ctx, const char* string);
 void printHelp();
-
+int interpret(ctxObjT Ctx);
 #endif
