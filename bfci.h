@@ -1,14 +1,20 @@
 #ifndef BFCI_H
 #define BFCI_H 
 #include <stdlib.h>
-#include <stdio.h>
+#include  <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
+#include "tcolors.h"
+
+
 
 /* VALUE DEFINITIONS */
 #define SUCCESS      2
 #define FAIL        -2
 #define TRUE         1
 #define FALSE        0 
+#define EXIT         0
 #define DATAMAX    255
 #define DATAMIN      0
 #define ALLOCJMP     5
@@ -40,6 +46,7 @@
 #define BIT_SET_TRUE(NUM, N)  (NUM |= (N))
 #define BIT_SET_FALSE(NUM, N) (NUM &= ~(N))
 
+#define att(type)             __attribute__((type))
 
 /*  FLAGS DEFINITIONS */
 /* int size is at least 16 bits */
@@ -140,4 +147,12 @@ void freeCtx(ctxObjT Ctx);
 uchar* StrToIns(ctxObjT Ctx, const char* string);
 void printHelp();
 int interpret(ctxObjT Ctx);
+/*void handleArgs(int argc, char** argv,
+                att(unused) uint* flags,
+                uint* filecount,
+                bool* givenstring,
+                char* source,
+                char* string);
+*/
+
 #endif

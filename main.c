@@ -1,5 +1,4 @@
 #include "bfci.h"
-#include <unistd.h>
 
 int main(int argc, char **argv){
     ctxObjT Ctx = NULL;
@@ -26,7 +25,7 @@ int main(int argc, char **argv){
             case 't':
                 filecount++;
                 if (given_option_i) {
-                    fprintf(stderr, "Using both '%s' and '%s' isn't currently possible!\n", "-i", "-t");
+                    fprintf(stderr, cERR "Using both '%s' and '%s' isn't currently possible!\n" cNO, "-i", "-t");
                     break;
                 }
                 source = optarg;
@@ -35,7 +34,7 @@ int main(int argc, char **argv){
             case 'i':
                 given_option_i = TRUE;
                 if(filecount > 0) {
-                    fprintf(stderr, "Using both '%s' and '%s' isn't currently possible!\n", "-i", "-t");
+                    fprintf(stderr, cERR "Using both '%s' and '%s' isn't currently possible!\n", "-i" cNO, "-t");
                     break;
                 }
                 string = optarg;
@@ -44,15 +43,15 @@ int main(int argc, char **argv){
             case '?':
                 switch(optopt){
                     case 't':
-                        fprintf(stderr, "Option '-%c' requires %s argument!\n", optopt, "filepath");
+                        fprintf(stderr, cERR "Option '-%c' requires %s argument!\n" cNO, optopt, "filepath");
                         break;
                         
                     case 'i':
-                        fprintf(stderr, "Option '-%c' requires %s argument!\n", optopt , "string");
+                        fprintf(stderr, cERR "Option '-%c' requires %s argument!\n" cNO, optopt , "string");
                         break;
 
                     default:
-                        fprintf(stderr, "Unknown option '-%c'!\n", optopt);
+                        fprintf(stderr, cERR "Unknown option '-%c'!\n" cNO, optopt);
                 }
         }
     }
@@ -71,13 +70,6 @@ int main(int argc, char **argv){
         interpret(Ctx);
     }
 
-   /* BIT_SET_TRUE(Ctx->flags, CTX_RUNNING);
-    * BIT_SET_FALSE(Ctx->flags, CTX_COMPLETED);
-    * BIT_TOGGLE(Ctx->flags, DATA_ALLOW_LOOPED);
-
-    * char* string = "TEST +-,.[]>< abcdABCD0123456789";
-    */
-    
     freeCtx(Ctx);
 
     return SUCCESS;

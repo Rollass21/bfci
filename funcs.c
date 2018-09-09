@@ -55,6 +55,65 @@ static const insSetT insSet[] = {
 
 /* HELPER FUNCTIONS */
 
+/*
+void
+handleArgs(int argc,
+           char** argv,
+           att(unused) uint* flags,
+           uint* filecount,
+           bool* givenstring,
+           char* source,
+           char* string){
+
+    int option;
+    *givenstring = FALSE;
+    *filecount = 0;
+
+    if (argc < 2) {
+        printHelp();
+        return;
+    }
+
+    while ((option = getopt(argc, argv, "ht:i:")) != -1) {
+        switch (option){
+        case 'h':
+            printHelp();
+            return;
+
+        case 't':
+            if (*givenstring) {
+                fprintf(stderr, "Using both '%s' and '%s' isn't currently possible!\n", "-i", "-t");
+            }
+            *filecount++;
+            source = optarg;
+            break;
+
+        case 'i':
+            if(*filecount > 0) {
+                fprintf(stderr, "Using both '%s' and '%s' isn't currently possible!\n", "-i", "-t");
+            }
+            *givenstring = TRUE;
+            string = optarg;
+            break;
+
+        case '?':
+            switch(optopt){
+            case 't':
+                fprintf(stderr, "Option '-%c' requires %s argument!\n", optopt, "filepath");
+
+            case 'i':
+                fprintf(stderr, "Option '-%c' requires %s argument!\n", optopt , "string");
+
+            default:
+                fprintf(stderr, "Unknown option '-%c'!\n", optopt);
+            }
+        }
+    }
+
+    return;
+}
+*/
+
 /* 
  * jmp()
  *
@@ -149,7 +208,7 @@ int mvRight(ctxObjT Ctx){
     
     /* Trace furthest index */
     if (Ctx->data->index + 1 >= Ctx->data->usedlen){
-        Ctx->data->usedlen = Ctx->data->index + 1;
+        Ctx->data->usedlen = Ctx->data->index + 2;
     }
 
     /* Casual move right once everything is figured out */
@@ -297,7 +356,7 @@ static
 insObjT initIns(const char* srcFilePath){
     insObjT newInsObj = calloc(1, sizeof(*newInsObj));
     if (!newInsObj) {
-        fprintf(stderr, "Error allocating instruction object!\n");
+        fprintf(stderr, cERR "Error allocating instruction object! \n" cNO);
         return NULL;
     }
 
@@ -308,7 +367,7 @@ insObjT initIns(const char* srcFilePath){
             return newInsObj;
         }
         else{
-            fprintf(stderr,"Error obtaining file \'%s\'!\n", srcFilePath);
+            fprintf(stderr, cERR "Error obtaining file \'%s\'!\n" cNO, srcFilePath);
             return newInsObj;
         }
     }
@@ -320,7 +379,7 @@ static
 dataObjT initData(size_t datalen){
     dataObjT newDataObj = calloc(1, sizeof(*newDataObj));
     if (!newDataObj){
-        fprintf(stderr, "Error allocating data object!\n");
+        fprintf(stderr, cERR "Error allocating data object!\n" cNO);
         return NULL;
     }
     newDataObj->len = datalen;
@@ -328,7 +387,7 @@ dataObjT initData(size_t datalen){
     newDataObj->tape = calloc(newDataObj->len, sizeof(*newDataObj->tape));
     if (!newDataObj->tape){
         free(newDataObj);
-        fprintf(stderr, "Error allocating data tape of length %zu!\n", datalen);
+        fprintf(stderr, cERR "Error allocating data tape of length %zu!\n" cNO, datalen);
         return NULL;
     }
     newDataObj->usedlen = 1;
@@ -340,7 +399,7 @@ static
 stackObjT initStack(){
     stackObjT newStackObj = calloc(1, sizeof(*newStackObj));
     if (!newStackObj){
-        fprintf(stderr, "Error allocating stack object!\n");
+        fprintf(stderr, cERR "Error allocating stack object!\n" cNO);
         return NULL;
     }
     newStackObj->tape = NULL;
@@ -385,6 +444,78 @@ initCtx(const char* srcFilePath,
     return NULL;
 }
 
+static void
+clearIns(insObjT insObj){
+    if (insObj) {
+        insObj->index = 0;
+    }
+    return;
+    }
+
+static void
+clearData(dataObjT dataObj){
+    if (dataObj) {
+        dataObj->index = 0; 
+        memset(dataObj->tape, DATAMIN, dataObj->usedlen * sizeof(*dataObj->tape));
+        dataObj->usedlen = 0;
+    }
+    return;
+}
+
+static void
+clearStack(stackObjT stackObj){
+    if (stackObj) {
+        memset(stackObj->tape, 0, stackObj->len * sizeof(*stackObj->tape));
+        stackObj->len = 0;
+    }
+}
+
+static void
+clearCtx(ctxObjT Ctx){
+    if (Ctx) {
+        clearIns(Ctx->ins);
+        clearData(Ctx->data);
+        clearStack(Ctx->stack);
+
+       BIT_SET_FALSE(Ctx->flags, CTX_COMPLETED | CTX_RUNNING);
+    }
+    return;
+}
+
+static void
+freeIns(insObjT insObj){
+    if (insObj) {
+        free(insObj->tape);
+        insObj->tape = NULL;
+        free(insObj->srcpath);
+        insObj->srcpath = NULL;
+        free(insObj);
+        insObj = NULL;
+    }
+    return;
+}
+
+static void
+freeData(dataObjT dataObj){
+    if (dataObj) {
+        free(dataObj->tape);
+        dataObj->tape = NULL;
+        free(dataObj);
+        dataObj = NULL;
+    }
+    return;
+}
+
+static void
+freeStack(stackObjT stackObj){
+    if (stackObj) {
+        stackObj->tape = NULL;
+        free(stackObj);
+        stackObj = NULL;
+    }
+
+    return;
+}
 
 /*TODO
  * freeCtx: Frees memory allocated for tapes
@@ -395,25 +526,13 @@ void freeCtx(ctxObjT Ctx){
     /* if already initialized or not cleared */
     if (Ctx){
         /* clean instruction object */
-        free(Ctx->ins->tape);
-        Ctx->ins->tape = NULL;
-        free(Ctx->ins->srcpath);
-        Ctx->ins->srcpath = NULL;
-        free(Ctx->ins);
-        Ctx->ins = NULL;
+        freeIns(Ctx->ins);
 
         /* clean data object */
-        free(Ctx->data->tape);
-        Ctx->data->tape = NULL;
-        free(Ctx->data);
-        Ctx->data = NULL;
+        freeData(Ctx->data);
 
         /* clean stack object */
-        free(Ctx->stack->tape);
-        Ctx->stack->tape = NULL;
-        free(Ctx->stack);
-        Ctx->stack = NULL;
-
+        freeStack(Ctx->stack);
         /* clean context object */
         free(Ctx);
         Ctx = NULL;
@@ -469,7 +588,7 @@ void printStack(ctxObjT Ctx) {
     }
 
     for(size_t i = 0; i < Ctx->stack->len; i++){
-        printf("start[%zu] end[%zu]\n",Ctx->stack->tape[i].start, Ctx->stack->tape[i].end);
+        printf("start[%zu] end[%zu]\n", Ctx->stack->tape[i].start, Ctx->stack->tape[i].end);
     }
 
     return;
@@ -482,7 +601,6 @@ void printFlags(ctxObjT Ctx){
     }
     uint flags = Ctx->flags;
 
-/*  if (Ctx->flags | ) printf("\n");*/
     printf("value: %u\n", flags);
 
     printf("%u CTX_RUNNING\n",          (flags & CTX_RUNNING)          ? 1 : 0); 
@@ -540,7 +658,7 @@ bool isBalanced(insObjT insObj){
     long int count = 0;
 
     /* if count gets below zero, closing bracket was used without pair opening bracket */
-    while (count >= 0 && ++currindex < insObj->usedlen){
+    while (count >= 0 && currindex < insObj->usedlen){
         switch (insObj->tape[currindex]){
             case WHILE: count++;
                         break;
@@ -548,10 +666,12 @@ bool isBalanced(insObjT insObj){
             case    DO: count--;
                         break;
         }
+
+        currindex++;
     }
 
     /* balanced brackets will set count to 0, more opening brackets would leave count>0 */
-    return (count) ? FALSE : TRUE;
+    return (count == 0) ? TRUE : FALSE;
 }
 /* 
  * getMatchingEnd()
@@ -667,6 +787,8 @@ LIFOPop(ctxObjT Ctx){
         return ALLOCFAIL;             
     }
 
+    Ctx->stack->tape = tapeCopy;
+
     return SUCCESS;
 }
 
@@ -744,9 +866,13 @@ interpret(ctxObjT Ctx){
     }
     
     // before interpretation
+    if (Ctx->flags & CTX_COMPLETED) {
+        clearCtx(Ctx);
+    }
+
     /* syntax checks */
     if(!isBalanced(Ctx->ins)){
-        fprintf(stderr, "Unbalanced brackets!\n");    
+        fprintf(stderr, cERR "ERROR: Unbalances brackets!\n" cNO);
         return FAIL;
     }
     BIT_SET_TRUE(Ctx->flags, CTX_RUNNING);
