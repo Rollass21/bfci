@@ -6,7 +6,8 @@ int main(int argc, char **argv){
     bool given_option_i = FALSE;
     char* source = "bfSrcs/helloworld.bf";
     char* string = "";
-    uint flags = PRINT_DIAGNOSTICS;
+    uint flags = PRINT_DIAGNOSTICS | TEST_STRICT;
+    //uint flags = 0;
     int option;
 
     opterr = 0;

@@ -1,5 +1,6 @@
 #ifndef BFCI_H
 #define BFCI_H 
+#include <assert.h>
 #include <stdlib.h>
 #include  <stdio.h>
 #include <string.h>
@@ -7,7 +8,10 @@
 
 #include "tcolors.h"
 
-
+enum {
+    false = 0,
+    true = 1
+};
 
 /* VALUE DEFINITIONS */
 #define SUCCESS      2
@@ -48,6 +52,14 @@
 
 #define att(type)             __attribute__((type))
 
+#define CASE_PASS(name) fprintf(stderr, cGREEN "PASSED: %s: %s" cNO "\n", __func__, name)
+#define CASE_FAIL(name) fprintf(stderr,   cERR "FAILED: %s: %s at %s:%d" cNO "\n", __func__, name, __FILE__, __LINE__)
+/* little hack to do two things atst in false branch, fragile and not really robust
+ * - when using ASSERT() there needs to be bool 'passed' variable as this macro relies on that
+ */
+#define ASSERT(x, name)   (x) ? CASE_PASS(name) : CASE_FAIL(name) | (passed = false);
+#define NASSERT(x, name)  ASSERT(!(x), name)
+
 /*  FLAGS DEFINITIONS */
 /* int size is at least 16 bits */
 typedef enum {
@@ -65,23 +77,27 @@ typedef enum {
     DATA_ALLOW_UNDERFLOW     = 1 <<  7,  
     DATA_DYNAMIC_GROW        = 1 <<  8, 
     PRINT_DIAGNOSTICS        = 1 <<  9,
+    TEST                     = 1 << 10,
+    TEST_STRICT              = 1 << 11,
 
 } ctxFlags;
 
 /* DATA TYPES DECALRATIONS */
 typedef unsigned char uchar;
 typedef unsigned int uint;
-typedef int bool;
+typedef char bool;
 
 /* {*}Obj are always pointers and need to be initialized */
 typedef struct _ctxObjT     *ctxObjT;
-typedef struct _dataObjT   *dataObjT;
-typedef struct _insObjT    *insObjT;
-typedef struct _stackObjT  *stackObjT;
+typedef struct _dataObjT    *dataObjT;
+typedef struct _insObjT     *insObjT;
+typedef struct _stackObjT   *stackObjT;
 
 typedef struct _stackCellT  stackCellT;
 typedef struct _insSetT     insSetT;
+
 typedef int    (*cmd)       (ctxObjT Ctx);
+typedef bool   (testfunc)   (void);
 
 /*
  * _ctxObjT      -- Object encapsulating source code and data
@@ -99,7 +115,7 @@ struct _ctxObjT {
 struct _dataObjT{
     uchar *tape;    /* data array */                              
     size_t index;           /* index of current data block */
-    size_t usedlen;         /* furthest visited array index */                 
+    size_t usedlen;         /* furthest visited array index + 1*/                 
     size_t len;             /* length of array */                   
 };
 
@@ -107,11 +123,12 @@ struct _dataObjT{
  * InsObjT      -- Object containing BrainFuck source code
  */
 struct _insObjT{
-    uchar *tape;    /* instruction array */                              
+    char *tape;             /* instruction array */                              
     size_t index;           /* index of current instruction */
-    size_t usedlen;         /* furthest visited array index */                 
+    size_t usedlen;         /* furthest visited array index + 1*/                 
     size_t len;             /* length of array */                   
     char* srcpath;          /* filepath of inputed BrainFuck source code */
+    bool jumped;            /* whether current instruction was jumped on by previous one */
 };
 
 /*
@@ -144,9 +161,11 @@ struct _insSetT {
 ctxObjT initCtx(const char* srcFilePath, size_t datalen, uint flags);
 void printCtx(ctxObjT Ctx);
 void freeCtx(ctxObjT Ctx);
-uchar* StrToIns(ctxObjT Ctx, const char* string);
+char* StrToIns(ctxObjT Ctx, const char* string);
 void printHelp();
 int interpret(ctxObjT Ctx);
+bool test();
+
 /*void handleArgs(int argc, char** argv,
                 att(unused) uint* flags,
                 uint* filecount,
@@ -154,5 +173,6 @@ int interpret(ctxObjT Ctx);
                 char* source,
                 char* string);
 */
+
 
 #endif

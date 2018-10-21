@@ -50,6 +50,7 @@ static const insSetT insSet[] = {
      .opcode  = DO,
      .command = loopEnd,
     },
+
     {.name = NULL}
 };
 
@@ -130,17 +131,17 @@ int jmp(insObjT insObj, size_t dest){
     }
     
     if (dest >= insObj->usedlen) {
-        fprintf(stderr, "Jump destination to unused instruction tape index!\n");
-        return NDFUSAGE;
+        return PASTBOUNDS;
     }
 
     insObj->index = dest;
+    insObj->jumped = true;
 
     return SUCCESS;
 } 
 
 static
-int pushIns(int c, insObjT insObj){
+int pushIns(char c, insObjT insObj){
     if (!insObj){
         return FAIL;
     }
@@ -171,9 +172,9 @@ int pushIns(int c, insObjT insObj){
 static bool
 isValidCtx(ctxObjT Ctx){
     if (!Ctx || !Ctx->data || !Ctx->ins || !Ctx->stack)
-        return FALSE;
+        return false;
 
-    return TRUE;
+    return true;
 }
 
 /*  isInstruction: Checks if given input c is valid opcode in InsSet object.
@@ -182,7 +183,7 @@ isValidCtx(ctxObjT Ctx){
  *  @c: Possible instruction opcode
  */
 static
-int isInstruction(int c) {
+int isInstruction(char c) {
     for (int i = 0; insSet[i].name != NULL; i++){
         if (insSet[i].opcode == c)
             return i;
@@ -207,8 +208,8 @@ int mvRight(ctxObjT Ctx){
     }
     
     /* Trace furthest index */
-    if (Ctx->data->index + 1 >= Ctx->data->usedlen){
-        Ctx->data->usedlen = Ctx->data->index + 2;
+    if (Ctx->data->index + 1 == Ctx->data->usedlen){
+        Ctx->data->usedlen++;
     }
 
     /* Casual move right once everything is figured out */
@@ -226,7 +227,8 @@ int mvLeft(ctxObjT Ctx){
 
     /* Loop around */
     if (Ctx->data->index == 0){
-        Ctx->data->index = Ctx->data->len;
+        Ctx->data->index = Ctx->data->len - 1;
+        Ctx->data->usedlen = Ctx->data->len;
         return SUCCESS;
     }
     
@@ -326,9 +328,9 @@ getsrc(const char *srcFilePath,
  *  StrToIns:
  *
  *  @Ctx:
- *  @string: string containing instructions, needs to be NULL terminated!
+ *  @string: string containing instructions
  */
-uchar*
+char*
 StrToIns(ctxObjT Ctx, const char* string){
     //if is valid and if there are already some instructions saved...
     if (!Ctx || !Ctx->ins || Ctx->ins->tape || !string ){
@@ -337,8 +339,8 @@ StrToIns(ctxObjT Ctx, const char* string){
     
     /* filter out just legit opcodes */
     for (; *string != '\0'; string++) {
-        if (isInstruction((int) *string) > -1){
-            pushIns((int) *string, Ctx->ins);
+        if (isInstruction(*string) > -1){
+            pushIns(*string, Ctx->ins);
         }
     }
 
@@ -361,6 +363,8 @@ insObjT initIns(const char* srcFilePath){
     }
 
     newInsObj->srcpath = NULL;
+    newInsObj->jumped = false;
+   
     // source file is not needed, can be later added with StrToIns()
     if (srcFilePath){
         if (getsrc(srcFilePath, newInsObj) == SUCCESS ){
@@ -383,14 +387,17 @@ dataObjT initData(size_t datalen){
         return NULL;
     }
     newDataObj->len = datalen;
+    newDataObj->usedlen = 0;
 
-    newDataObj->tape = calloc(newDataObj->len, sizeof(*newDataObj->tape));
-    if (!newDataObj->tape){
-        free(newDataObj);
-        fprintf(stderr, cERR "Error allocating data tape of length %zu!\n" cNO, datalen);
-        return NULL;
+    if (datalen > 0) {
+        newDataObj->tape = calloc(newDataObj->len, sizeof(*newDataObj->tape));
+        if (!newDataObj->tape){
+            free(newDataObj);
+            fprintf(stderr, cERR "Error allocating data tape of length %zu!\n" cNO, datalen);
+            return NULL;
+        }
+        newDataObj->usedlen = 1;
     }
-    newDataObj->usedlen = 1;
 
     return newDataObj;
 }
@@ -426,7 +433,7 @@ initCtx(const char* srcFilePath,
     if (srcFilePath && !newCtx->ins->srcpath){ goto insCleanup; }
     /* creating data object */
     newCtx->data = initData(datalen);
-    if (!newCtx->data){ goto dataCleanup; }
+    if (!newCtx->data && datalen > 0){ goto dataCleanup; }
     /* creating stack object */
     newCtx->stack = initStack();
     if (!newCtx->stack){ goto stackCleanup; }
@@ -445,40 +452,45 @@ initCtx(const char* srcFilePath,
 }
 
 static void
-clearIns(insObjT insObj){
+resetIns(insObjT insObj){
     if (insObj) {
         insObj->index = 0;
     }
+
     return;
-    }
+}
 
 static void
-clearData(dataObjT dataObj){
+resetData(dataObjT dataObj){
     if (dataObj) {
         dataObj->index = 0; 
         memset(dataObj->tape, DATAMIN, dataObj->usedlen * sizeof(*dataObj->tape));
         dataObj->usedlen = 0;
     }
+
     return;
 }
 
 static void
-clearStack(stackObjT stackObj){
+resetStack(stackObjT stackObj){
     if (stackObj) {
         memset(stackObj->tape, 0, stackObj->len * sizeof(*stackObj->tape));
         stackObj->len = 0;
     }
+
+    return;
 }
 
 static void
-clearCtx(ctxObjT Ctx){
+resetCtx(ctxObjT Ctx){
     if (Ctx) {
-        clearIns(Ctx->ins);
-        clearData(Ctx->data);
-        clearStack(Ctx->stack);
+        resetIns(Ctx->ins);
+        resetData(Ctx->data);
+        resetStack(Ctx->stack);
 
        BIT_SET_FALSE(Ctx->flags, CTX_COMPLETED | CTX_RUNNING);
     }
+
     return;
 }
 
@@ -492,6 +504,7 @@ freeIns(insObjT insObj){
         free(insObj);
         insObj = NULL;
     }
+
     return;
 }
 
@@ -501,8 +514,8 @@ freeData(dataObjT dataObj){
         free(dataObj->tape);
         dataObj->tape = NULL;
         free(dataObj);
-        dataObj = NULL;
     }
+    
     return;
 }
 
@@ -511,7 +524,6 @@ freeStack(stackObjT stackObj){
     if (stackObj) {
         stackObj->tape = NULL;
         free(stackObj);
-        stackObj = NULL;
     }
 
     return;
@@ -526,16 +538,24 @@ void freeCtx(ctxObjT Ctx){
     /* if already initialized or not cleared */
     if (Ctx){
         /* clean instruction object */
-        freeIns(Ctx->ins);
+        if (Ctx->ins){
+            freeIns(Ctx->ins);
+            Ctx->ins = NULL;
+        }
 
         /* clean data object */
-        freeData(Ctx->data);
+        if (Ctx->data) {
+            freeData(Ctx->data);
+            Ctx->data = NULL;
+        }
 
         /* clean stack object */
-        freeStack(Ctx->stack);
+        if (Ctx->stack) {
+            freeStack(Ctx->stack);
+            Ctx->stack = NULL;
+        }
         /* clean context object */
         free(Ctx);
-        Ctx = NULL;
     }
 }
 
@@ -612,6 +632,8 @@ void printFlags(ctxObjT Ctx){
     printf("%u DATA_ALLOW_UNDERFLOW\n", (flags & DATA_ALLOW_UNDERFLOW) ? 1 : 0);
     printf("%u DATA_DYNAMIC_GROW\n",    (flags & DATA_DYNAMIC_GROW)    ? 1 : 0);
     printf("%u PRINT_DIAGNOSTICS\n",    (flags & PRINT_DIAGNOSTICS)    ? 1 : 0);
+    printf("%u TEST\n",                 (flags & TEST)                 ? 1 : 0);
+    printf("%u TEST_STRICT\n",          (flags & TEST_STRICT)          ? 1 : 0);
     
     return;
 }
@@ -646,12 +668,10 @@ void printCtx(ctxObjT Ctx){
 }
 
 
-// XXX ins->usedlen is not really the described 'last used index number'
-// TODO fix ins->usedlen incrementing
 static
 bool isBalanced(insObjT insObj){
-    if (!insObj || !insObj->tape || !insObj->usedlen) {
-        return 0;
+    if (!insObj || !insObj->tape) {
+        return TRUE;
     }
 
     size_t currindex = insObj->index;
@@ -678,32 +698,40 @@ bool isBalanced(insObjT insObj){
  *
  * @insObj - Pointer to structure containing instruction tape
  *
+ * @currindex: index of opening bracket in @string in which we want to find a closing bracket
+ * @lastindex: last index to be checked, i.e. @string[@lastindex + 1] wont be checked
+ * @string: string itself to be checked
+ *
  * Returns index of closing bracket paired with the one currently under
- * instruction tape index.
- * If pairing or starting bracket not found, or unvalid insObject, returns 0.
+ * currindex.
+ * If pairing or starting bracket not found, or unvalid arguments, returns 0.
  */
 static size_t
-getMatchingClosing(insObjT insObj){
-    if (!insObj || !insObj->tape || !insObj->usedlen) {
+getMatchingClosing(size_t currindex, size_t lastindex, const char* string){
+    if (!string){
+        return 0; 
+    }
+
+    /* hopefully long int is big enough */
+    long int seen = 0;
+
+    /* currindex should point to starting bracket to which we want to find closing */
+    if (string[currindex] != WHILE){
         return 0;
     }
 
-    size_t currindex = insObj->index;
-    /* maybe too small? time will tell */
-    size_t seen = 0;
-
-    /* Search for matching brace until end of instruction tape */
+    /* Search for matching brace until end of string */
     do {
-        switch (insObj->tape[currindex]){
+        switch (string[currindex]){
             case WHILE: seen++;
                         break;
 
             case    DO: seen--;
                         break;
         }
-    } while (seen && ++currindex < insObj->usedlen);
+    } while (seen > 0 && ++currindex <= lastindex);
     
-    return (!seen) ? currindex : 0;
+    return (seen != 0) ? 0 : currindex;
 }
 
 static int
@@ -767,7 +795,6 @@ LIFOPushNew(ctxObjT Ctx,
 
 static int
 LIFOPop(ctxObjT Ctx){
-
     if (!isValidCtx(Ctx)) {
         return FAIL;
     }
@@ -782,9 +809,9 @@ LIFOPop(ctxObjT Ctx){
     stackCellT* tapeCopy = realloc(Ctx->stack->tape, memSize);
 
     // error check for null
-    if (!tapeCopy) {
+    if (!tapeCopy && memSize > 0) {
         Ctx->stack->len++;
-        return ALLOCFAIL;             
+        return ALLOCFAIL;
     }
 
     Ctx->stack->tape = tapeCopy;
@@ -798,8 +825,9 @@ loopBeg(ctxObjT Ctx){
     if(!isValidCtx(Ctx)){
         return FAIL;
     }
+
     size_t startindex = Ctx->ins->index;
-    size_t endindex   = getMatchingClosing(Ctx->ins);
+    size_t endindex   = getMatchingClosing(Ctx->ins->index, Ctx->ins->usedlen, Ctx->ins->tape);
     if (!endindex) {
         return NOLOOPEND;
     }
@@ -841,22 +869,68 @@ loopEnd(ctxObjT Ctx){
 }
 
 /* TODO
- * execute: Takes care of executing the right instruction
+ * execIns: Takes care of executing the right instruction
  *          Executes one instruction at Ctx->ins->index
  *
  * @tape: Tape structure of which one instruction tape will be executed
  */
-static
-int execute(ctxObjT Ctx){
+static int
+execIns(ctxObjT Ctx){
     if (!isValidCtx(Ctx)){
         return FAIL;
     }
 
-    uchar currIns = Ctx->ins->tape[Ctx->ins->index];
+    char currIns = Ctx->ins->tape[Ctx->ins->index];
     int currCMDIndex = isInstruction(currIns);
-    cmd currCMD = insSet[currCMDIndex].command;
+    if (currCMDIndex < 0) {
+        return NDFINS;     
+    }
+    insSetT CMD = insSet[currCMDIndex];
+    cmd currCMD = CMD.command;
 
     return currCMD(Ctx);
+}
+
+/* incPC()
+ *
+ * Increment programm counter, in other words Ctx->ins->index
+ *
+ * Return True if there are possibly more instructions to execute, False if
+ * there are no more
+ */
+static bool
+incPC(ctxObjT Ctx){
+    if (!Ctx) return false;
+
+    /* dont increment if we previously jumped on current instruction */
+    if (Ctx->ins->jumped) {
+        Ctx->ins->jumped = false;
+        return true;
+    }
+
+    /* programm counter incrementation */
+    if (Ctx->ins->index + 1 < Ctx->ins->usedlen) {
+        Ctx->ins->index++;
+        return true;
+    }
+
+    return false;
+}
+
+static int
+execCtx(ctxObjT Ctx){
+    int retval = SUCCESS;
+
+    do {
+        retval = execIns(Ctx);
+
+        switch (retval) {
+         default:
+                continue;
+        }
+    } while (incPC(Ctx));
+
+    return retval;
 }
 
 int
@@ -867,20 +941,25 @@ interpret(ctxObjT Ctx){
     
     // before interpretation
     if (Ctx->flags & CTX_COMPLETED) {
-        clearCtx(Ctx);
+        resetCtx(Ctx);
+    }
+        
+    if (Ctx->flags & (TEST | TEST_STRICT)) {
+        if (!test() && Ctx->flags & TEST_STRICT) {
+            fprintf(stderr, "Didn't passed all tests! Aborting...\n");
+            return -1;
+        }
     }
 
     /* syntax checks */
     if(!isBalanced(Ctx->ins)){
-        fprintf(stderr, cERR "ERROR: Unbalances brackets!\n" cNO);
+        fprintf(stderr, cERR "ERROR: Unbalanced brackets!\n" cNO);
         return FAIL;
     }
     BIT_SET_TRUE(Ctx->flags, CTX_RUNNING);
 
     // interpretation
-    for(Ctx->ins->index = 0; Ctx->ins->index < Ctx->ins->usedlen; Ctx->ins->index++){
-        execute(Ctx);
-    }
+    execCtx(Ctx);
     
     // after interpretation
     BIT_SET_TRUE(Ctx->flags, CTX_COMPLETED);
@@ -890,5 +969,253 @@ interpret(ctxObjT Ctx){
         printCtx(Ctx);
 
     return SUCCESS;
+}
+
+/* test functions */
+
+static bool
+test_mvRight(void){
+    /* 5 is just some random positive number for testing */
+    size_t datalen = 5;
+    bool passed = true;
+    ctxObjT Ctx = initCtx(NULL, datalen, 0);
+
+    /* casual move test */
+    ASSERT(mvRight(Ctx) == SUCCESS, "casual move: retval check");
+    ASSERT(Ctx->data->index == 1, "casual move: data index update");
+    ASSERT(Ctx->data->usedlen == 2, "casual move: data usedlen update");
+
+    /* index loop around test */
+    /* simulate highest possible index to induce looparound*/
+    Ctx->data->usedlen = Ctx->data->len;
+    Ctx->data->index = Ctx->data->len - 1;   
+
+    ASSERT(mvRight(Ctx) == SUCCESS, "loop around: retval check");
+    ASSERT(Ctx->data->index != Ctx->data->len - 1, "loop around: data index update");
+    ASSERT(Ctx->data->index == 0, "loop around: data index looped");
+
+    /* NULL tests */
+    ASSERT(mvLeft(NULL) == FAIL, "NULL as Ctx retval check");
+    freeData(Ctx->data);
+    Ctx->data = NULL;
+    ASSERT(mvLeft(Ctx) == FAIL, "NULL as Ctx->data retval check");
+
+    freeCtx(Ctx);
+    return passed;
+}
+
+static bool
+test_mvLeft(void){
+    /* 5 is just some random positive number for testing */
+    size_t datalen = 5;
+    bool passed = true;
+    ctxObjT Ctx = initCtx(NULL, datalen, 0);
+
+    /* casual move test */
+    /* simulate move right to avoid looparound */
+    mvRight(Ctx);
+
+    ASSERT(mvLeft(Ctx) == SUCCESS, "casual move: retval check");
+    ASSERT(Ctx->data->index == 0, "casual move: data index update");
+    ASSERT(Ctx->data->usedlen == 2, "casual move: data usedlen update");
+
+    /* index loop around test */
+    /* simulate lowest possible index to induce looparound*/
+    Ctx->data->index = 0;
+
+    ASSERT(mvLeft(Ctx) == SUCCESS, "index loop around: retval check");
+    ASSERT(Ctx->data->index != 0, "index loop around: data index update");
+    ASSERT(Ctx->data->index == Ctx->data->len - 1, "index loop around: data index looped");
+    ASSERT(Ctx->data->usedlen == Ctx->data->len, "index loop around: data usedlen update")
+
+    /* NULL tests */
+    ASSERT(mvLeft(NULL) == FAIL, "NULL as Ctx retval check");
+    freeData(Ctx->data);
+    Ctx->data = NULL;
+    ASSERT(mvLeft(Ctx) == FAIL, "NULL as Ctx->data retval check");
+
+    freeCtx(Ctx);
+    return passed;
+}
+
+static bool
+test_incData(void){
+    /* 5 is just some random positive number for testing */
+    size_t datalen = 5;
+    bool passed = true;
+    ctxObjT Ctx = initCtx(NULL, datalen, 0);
+
+    /* zero indexes will also test initCtx which must set start index to 0 */
+
+    /* casual increment test */
+    ASSERT(incData(Ctx) == SUCCESS, "casual inc: retval check");
+    ASSERT(Ctx->data->tape[0] != 0, "casual inc: data val update");
+    ASSERT(Ctx->data->tape[0] == 1, "casual inc: data val inced");
+
+    /* value loop around test */
+    /* simulate highest possible value to induce looparound*/
+    Ctx->data->tape[0] = DATAMAX;
+
+    ASSERT(incData(Ctx) == SUCCESS, "val loop around inc: retval check");
+    ASSERT(Ctx->data->tape[0] != DATAMAX, "val loop around inc: data val update");
+    ASSERT(Ctx->data->tape[0] == DATAMIN, "val loop around inc: data val looped");
+
+    /* NULL tests */
+    ASSERT(incData(NULL) == FAIL, "NULL as Ctx as check");
+    freeData(Ctx->data);
+    Ctx->data = NULL;
+    ASSERT(incData(Ctx) == FAIL, "NULL as Ctx->data retval check");
+
+    freeCtx(Ctx);
+    return passed;
+}
+
+static bool
+test_decData(void){
+    /* 5 is just some random positive number for testing */
+    size_t datalen = 5;
+    bool passed = true;
+    ctxObjT Ctx = initCtx(NULL, datalen, 0);
+
+    /* zero indexes will also test initCtx which must set start index to 0 */
+
+    /* casual increment test */
+    /* simulate number > 0 to avoid looparound */
+    Ctx->data->tape[0] = 1; 
+
+    ASSERT(decData(Ctx) == SUCCESS, "casual dec: retval check");
+    ASSERT(Ctx->data->tape[0] != 1, "casual dec: data val update");
+    ASSERT(Ctx->data->tape[0] == 0, "casual dec: data val decd");
+
+    /* value loop around test */
+    /* simulate lowest possible value to induce looparound*/
+    Ctx->data->tape[0] = DATAMIN;
+
+    ASSERT(decData(Ctx) == SUCCESS, "val loop around dec: retval check");
+    ASSERT(Ctx->data->tape[0] != DATAMIN, "val loop around dec: data val update");
+    ASSERT(Ctx->data->tape[0] == DATAMAX, "val loop around dec: data val looped");
+
+    /* NULL tests */
+    ASSERT(decData(NULL) != SUCCESS, "NULL as Ctx as check");
+    freeData(Ctx->data);
+    Ctx->data = NULL;
+    ASSERT(decData(Ctx) != SUCCESS, "NULL as Ctx->data retval check");
+
+    freeCtx(Ctx);
+    return passed;
+}
+
+static bool
+test_getMatchingClosing(){
+    bool passed = true;
+    size_t closing;
+    /*                0123456789 */
+    char tstring[] = "+[-].][+";
+    size_t len = strlen(tstring);
+
+    /* test pre opening */
+    closing = getMatchingClosing(0, len, tstring);
+    ASSERT(closing == 0, "retval: pre opening bracket");
+
+    /* test on opening */
+    closing = getMatchingClosing(1, len, tstring);
+    ASSERT(closing == 3, "retval: on opening bracket");
+    
+    /* test after opening & before closing */
+    closing = getMatchingClosing(2, len, tstring);
+    ASSERT(closing == 0, "retval: after opening/pre closing bracket");
+    
+    /* test on closing */
+    closing = getMatchingClosing(3, len, tstring);
+    ASSERT(closing == 0, "retval: on closing bracket");
+    
+    /* test after closing */
+    closing = getMatchingClosing(4, len, tstring);
+    ASSERT(closing == 0, "retval: after closing bracket");
+
+    /* test reversed */
+    closing = getMatchingClosing(5, len, tstring);
+    ASSERT(closing == 0, "retval: reversed");
+
+    /* test no closing */
+    closing = getMatchingClosing(6, len, tstring);
+    ASSERT(closing == 0, "retval: no closing");
+
+    /* test no opening */
+    closing = getMatchingClosing(0, 1, "]+");
+    ASSERT(closing == 0, "retval: no opening");
+
+    /* test no opening & closing */
+    closing = getMatchingClosing(0, 2, "+-.");
+    ASSERT(closing == 0, "retval: no opening & closing");
+
+    /* test empty string */
+    closing = getMatchingClosing(0, 0, "");
+    ASSERT(closing == 0, "retval: empty string");
+
+    /* test null string */
+    closing = getMatchingClosing(0, len, NULL);
+    ASSERT(closing == 0, "retval: NULL ptr");
+
+    return passed;
+}
+
+static bool
+test_jmp(){
+    bool passed = true;
+    int retval;
+
+    ctxObjT Ctx = initCtx(NULL, 0, 0);
+    StrToIns(Ctx, "+[+--]+"); 
+    /* test jump to higher index */
+    retval = jmp(Ctx->ins, 5);
+    ASSERT(Ctx->ins->index == 5, "set index: higher index");
+    ASSERT(retval != FAIL, "retval: not failed");
+
+    /* test jump to lower index */
+    retval = jmp(Ctx->ins, 1);
+    ASSERT(Ctx->ins->index == 1, "set index: lower index");
+    ASSERT(retval != FAIL, "retval: not failed");
+
+    /* test jump to same index */
+    retval = jmp(Ctx->ins, 1);
+    ASSERT(Ctx->ins->index == 1, "set index: same index");
+    ASSERT(retval != FAIL, "retval: not failed");
+
+    /* test jump to unused index */
+    retval = jmp(Ctx->ins, Ctx->ins->len + 1);
+    ASSERT(Ctx->ins->index == 1, "set index: out of bounds index");
+    ASSERT(retval == PASTBOUNDS, "retval: PASTBOUNDS");
+
+    /* test null insObject */
+    retval = jmp(NULL, 1);
+    ASSERT(Ctx->ins->index == 1, "arg check: null as insObj");
+    ASSERT(retval == FAIL, "retval: failed");
+
+    freeCtx(Ctx);
+    return passed;
+}
+
+bool
+test(void){
+    testfunc *tests[] = {
+        test_mvRight,
+        test_mvLeft,
+        test_incData,
+        test_decData,
+        test_getMatchingClosing,
+        test_jmp,
+    };
+
+    size_t ntests = sizeof(tests) / sizeof(*tests);
+    size_t npassed = 0;
+
+    for (size_t i = 0; i < ntests; i++){
+        if (tests[i]())
+            npassed++; 
+    }
+        
+    printf(cBLUE "passed: %zu/%zu tests" cNO "\n" , npassed, ntests);
+    return (npassed == ntests);
 }
 
