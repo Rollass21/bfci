@@ -2,7 +2,7 @@ PROGRAM = bfci # name of executable
 CC = gcc # compiler used: gcc
 MAINSRC = main.c # main source file, in most cases main.c
 SRCS = funcs.c # .c files containing funcs
-HEADERS = bfci.h # .h files
+HEADERS = bfci.h tcolors.h # .h files
 
 CFLAGS = -O0 -ggdb -Wall #-Werror
 

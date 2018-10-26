@@ -943,13 +943,15 @@ interpret(ctxObjT Ctx){
     if (Ctx->flags & CTX_COMPLETED) {
         resetCtx(Ctx);
     }
-        
+    
+    /*
     if (Ctx->flags & (TEST | TEST_STRICT)) {
         if (!test() && Ctx->flags & TEST_STRICT) {
             fprintf(stderr, "Didn't passed all tests! Aborting...\n");
             return -1;
         }
     }
+    */
 
     /* syntax checks */
     if(!isBalanced(Ctx->ins)){
