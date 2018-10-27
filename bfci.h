@@ -46,9 +46,12 @@ enum {
 #define    DO ']'
 
 /* MACROS */
-#define BIT_TOGGLE(NUM, N)    (NUM ^= (N))
-#define BIT_SET_TRUE(NUM, N)  (NUM |= (N))
-#define BIT_SET_FALSE(NUM, N) (NUM &= ~(N))
+#define BIT_TOGGLE(VAR, N)    (VAR ^= (N))
+#define BIT_SET_TRUE(VAR, N)  (VAR |= (N))
+#define BIT_SET_FALSE(VAR, N) (VAR &= ~(N))
+
+#define FLAG_SET(VAR, N, VAL) (VAL) ? BIT_SET_TRUE(VAR, N) : BIT_SET_FALSE(VAR, N);
+#define FLAG_TOGGLE(VAR, N)   BIT_TOGGLE(VAR, N);
 
 #define att(type)             __attribute__((type))
 
@@ -90,7 +93,9 @@ typedef enum {
 /* states of the ins object */
 typedef enum {
     INS_JUMPED               = 1 <<  0,
-    INS_RLE                  = 1 <<  1,
+    INS_FROM_STRING          = 1 <<  1,
+    INS_FROM_FILE            = 1 <<  2,
+    INS_RLE                  = 1 <<  3,
 } insFlags;
 
 /* GENERAL DATA TYPEDEFS */
@@ -107,8 +112,9 @@ typedef struct _stackObjT   *stackObjT;
 typedef struct _stackCellT  stackCellT;
 typedef struct _insSetT     insSetT;
 
-typedef int    (*cmd)       (ctxObjT Ctx);
-typedef bool   (testfunc)   (void);
+typedef int     (*cmd)       (ctxObjT Ctx);
+typedef bool    (testfunc)   (void);
+typedef int     (*method)    (void*, void* arg);
 
 /*
  * _ctxObjT      -- Object encapsulating source code and data
@@ -117,7 +123,7 @@ struct _ctxObjT {
     insObjT ins;            /* instruction object containing source code to execute */
     dataObjT data;          /* data object containing data over which instruction operate */
     stackObjT stack;        /* stack object used to store stacked bracket indexes */
-    uint flags;             /* flags containing states of machine */
+    ctxFlags flags;         /* flags containing states of machine */
 };
 
 /* TODO - add min and max and figure out how to do it when min and max overlaps
@@ -128,18 +134,20 @@ struct _dataObjT{
     size_t index;           /* index of current data block */
     size_t usedlen;         /* furthest visited array index + 1*/                 
     size_t len;             /* length of array */                   
+    dataFlags flags;
 };
 
 /*
  * InsObjT      -- Object containing BrainFuck source code
  */
 struct _insObjT{
-    char *tape;             /* instruction array */                              
+    uchar *tape;            /* instruction array */                              
     size_t index;           /* index of current instruction */
     size_t usedlen;         /* furthest visited array index + 1*/                 
     size_t len;             /* length of array */                   
     char* srcpath;          /* filepath of inputed BrainFuck source code */
     bool jumped;            /* whether current instruction was jumped on by previous one */
+    insFlags flags;
 };
 
 /*
@@ -169,10 +177,10 @@ struct _insSetT {
 
 
 /* FUNCTION DECLARATIONS */
-ctxObjT initCtx(const char* srcFilePath, size_t datalen, uint flags);
+ctxObjT initCtx(const char* srcpath, const char* srcstring, size_t datalen, uint flags);
 void printCtx(ctxObjT Ctx);
 void freeCtx(ctxObjT Ctx);
-char* StrToIns(ctxObjT Ctx, const char* string);
+uchar* StrToIns(ctxObjT Ctx, const char* string);
 void printHelp();
 int interpret(ctxObjT Ctx);
 bool test();

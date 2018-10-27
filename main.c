@@ -62,12 +62,12 @@ int main(int argc, char **argv){
     }
 
     if (given_option_i) {
-        Ctx = initCtx(NULL, DATAMAXLEN, flags);
-        StrToIns(Ctx, string);
+        Ctx = initCtx(NULL, string, DATAMAXLEN, flags);
+        //StrToIns(Ctx, string);
         interpret(Ctx);
     }
     if (filecount > 0) {
-        Ctx = initCtx(source, DATAMAXLEN, flags);
+        Ctx = initCtx(source, NULL, DATAMAXLEN, flags);
         interpret(Ctx);
     }
 

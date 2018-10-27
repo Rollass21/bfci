@@ -141,7 +141,7 @@ int jmp(insObjT insObj, size_t dest){
 } 
 
 static
-int pushIns(char c, insObjT insObj){
+int pushIns(uchar ins, insObjT insObj){
     if (!insObj){
         return FAIL;
     }
@@ -161,7 +161,7 @@ int pushIns(char c, insObjT insObj){
     }
 
     // adding instruction
-    insObj->tape[insObj->usedlen++] = c;
+    insObj->tape[insObj->usedlen++] = ins;
 
     return SUCCESS;
 }
@@ -294,6 +294,57 @@ inpData(ctxObjT Ctx){
     return SUCCESS;
 }
 
+static int
+fromFile(void* insObj, void* arg){
+    int index;
+    insObjT ins = insObj;
+    if (!ins || !arg)
+        return FAIL;
+
+    char* srcpath = (char*) arg;
+    FILE *srcfile = fopen(srcpath, "r");    
+    if (!srcfile)
+        return FILEFAIL;
+
+    ins->srcpath = strdup(srcpath);
+    FLAG_SET(ins->flags, INS_FROM_FILE, false);
+
+    /* filter out just legit opcodes */
+    // add RLE support
+    for (int c = getc(srcfile); c != EOF; c = getc(srcfile)){
+        if ((index = isInstruction(c)) > -1){
+            pushIns(index, ins);
+        }
+    }
+
+    fclose(srcfile);
+    return SUCCESS;
+}
+
+static int
+fromString(void* insObj, void* arg){
+    int index;            
+    insObjT ins = insObj;
+    if (!ins || !arg )
+        return FAIL;
+
+    if (ins->flags & INS_FROM_FILE)
+        return NDFUSAGE;
+
+    FLAG_SET(ins->flags, INS_FROM_STRING, true);
+
+    char* string = (char*) arg;
+    while(*string != '\0'){
+        if ((index = isInstruction(*string)) > -1){
+            pushIns(index, ins);
+        }
+
+        /* next char */
+        string++;
+    }
+
+    return SUCCESS;
+}
 
 /* TODO 
  * strips
@@ -304,25 +355,33 @@ inpData(ctxObjT Ctx){
  *  @insset Instruction set array used to identify instructions
  */
 static int
-getsrc(const char *srcFilePath,
-       insObjT insObj){
+getsrc(insObjT insObj,
+       const char* srcpath,
+       const char* srcstring){
 
-    FILE *srcFile = fopen(srcFilePath, "r");
-    if (srcFile == NULL){
-        return FILEFAIL;
-    }
-    insObj->srcpath = strdup(srcFilePath);
-
-    /* filter out just legit opcodes */
-    for (int c = getc(srcFile); c != EOF; c = getc(srcFile)){
-        if (isInstruction(c) > -1){
-            pushIns(c, insObj);
-        }
+    const char* src;
+    method fromWhat;
+    /* and, because we cant obtain source from both methods atst and we dont have to really get the source */
+    if (srcpath && srcstring) {
+        FLAG_SET(insObj->flags, INS_FROM_STRING | INS_FROM_FILE, false)
+        return NDFUSAGE;
     }
 
-    fclose(srcFile);
-    return SUCCESS;
+    /* for when the file contains bf source*/
+    if (srcpath){
+        fromWhat = fromFile;
+        src = srcpath;
+    }
+
+    /* for when the string contains bf source*/
+    if (srcstring){
+        fromWhat = fromString;
+        src = srcstring;
+    }
+
+    return fromWhat((void*) insObj, (void*) src);
 }
+
 
 /*  
  *  StrToIns:
@@ -330,7 +389,7 @@ getsrc(const char *srcFilePath,
  *  @Ctx:
  *  @string: string containing instructions
  */
-char*
+uchar*
 StrToIns(ctxObjT Ctx, const char* string){
     //if is valid and if there are already some instructions saved...
     if (!Ctx || !Ctx->ins || Ctx->ins->tape || !string ){
@@ -347,7 +406,6 @@ StrToIns(ctxObjT Ctx, const char* string){
     return Ctx->ins->tape;
 }
 
-//TODO
 /* 
  * insObjT: initiates Instruction Object
  *
@@ -355,7 +413,8 @@ StrToIns(ctxObjT Ctx, const char* string){
  *               be set with StrToIns() before execution
  */
 static
-insObjT initIns(const char* srcFilePath){
+insObjT initIns(const char* srcpath,
+                const char* srcstring){
     insObjT newInsObj = calloc(1, sizeof(*newInsObj));
     if (!newInsObj) {
         fprintf(stderr, cERR "Error allocating instruction object! \n" cNO);
@@ -363,17 +422,11 @@ insObjT initIns(const char* srcFilePath){
     }
 
     newInsObj->srcpath = NULL;
-    newInsObj->jumped = false;
+    newInsObj->flags = 0;
    
     // source file is not needed, can be later added with StrToIns()
-    if (srcFilePath){
-        if (getsrc(srcFilePath, newInsObj) == SUCCESS ){
-            return newInsObj;
-        }
-        else{
-            fprintf(stderr, cERR "Error obtaining file \'%s\'!\n" cNO, srcFilePath);
-            return newInsObj;
-        }
+    if (getsrc(newInsObj, srcpath, srcstring) != SUCCESS){
+        return NULL; 
     }
 
     return newInsObj;
@@ -419,21 +472,25 @@ stackObjT initStack(){
  *
  */
 ctxObjT
-initCtx(const char* srcFilePath,
+initCtx(const char* srcpath,
+        const char* srcstring,
         size_t datalen,
         uint flags){
 
     /* creating context object */
     ctxObjT newCtx = malloc(sizeof(*newCtx));
     if (!newCtx){ return NULL; }
+
     /* creating instruction object */
-    newCtx->ins = initIns(srcFilePath);
+    newCtx->ins = initIns(srcpath, srcstring);
     if (!newCtx->ins){ goto insCleanup; } 
     /* checking if file was loaded correctly */
-    if (srcFilePath && !newCtx->ins->srcpath){ goto insCleanup; }
+    if (srcpath && !newCtx->ins->srcpath){ goto insCleanup; }
+
     /* creating data object */
     newCtx->data = initData(datalen);
     if (!newCtx->data && datalen > 0){ goto dataCleanup; }
+
     /* creating stack object */
     newCtx->stack = initStack();
     if (!newCtx->stack){ goto stackCleanup; }
@@ -581,7 +638,8 @@ void printIns(ctxObjT Ctx){
     }
 
     for(size_t i = 0; i < Ctx->ins->usedlen; i++){
-        printf("%c", Ctx->ins->tape[i]);
+        uchar cmdIndex = Ctx->ins->tape[i];
+        printf("%c", insSet[cmdIndex].opcode);
     }
     printf("\n");
 
@@ -708,22 +766,24 @@ bool isBalanced(insObjT insObj){
  * If pairing or starting bracket not found, or unvalid arguments, returns 0.
  */
 static size_t
-getMatchingClosing(size_t currindex, size_t lastindex, const char* string){
-    if (!string){
+getMatchingClosing(insObjT insObj){
+    if (!insObj){
         return 0; 
     }
 
+    size_t currindex = insObj->index;
+    size_t lastindex = insObj->usedlen;
     /* hopefully long int is big enough */
     long int seen = 0;
 
     /* currindex should point to starting bracket to which we want to find closing */
-    if (string[currindex] != WHILE){
+    if (insSet[insObj->tape[currindex]].opcode != WHILE){
         return 0;
     }
 
     /* Search for matching brace until end of string */
     do {
-        switch (string[currindex]){
+        switch (insSet[insObj->tape[currindex]].opcode){
             case WHILE: seen++;
                         break;
 
@@ -828,7 +888,7 @@ loopBeg(ctxObjT Ctx){
     }
 
     size_t startindex = Ctx->ins->index;
-    size_t endindex   = getMatchingClosing(Ctx->ins->index, Ctx->ins->usedlen, Ctx->ins->tape);
+    size_t endindex   = getMatchingClosing(Ctx->ins);
     if (!endindex) {
         return NOLOOPEND;
     }
@@ -881,13 +941,8 @@ execIns(ctxObjT Ctx){
         return FAIL;
     }
 
-    char currIns = Ctx->ins->tape[Ctx->ins->index];
-    int currCMDIndex = isInstruction(currIns);
-    if (currCMDIndex < 0) {
-        return NDFINS;     
-    }
-    insSetT CMD = insSet[currCMDIndex];
-    cmd currCMD = CMD.command;
+    uchar currIns = Ctx->ins->tape[Ctx->ins->index];
+    cmd currCMD = insSet[currIns].command;
 
     return currCMD(Ctx);
 }
@@ -981,7 +1036,7 @@ test_mvRight(void){
     /* 5 is just some random positive number for testing */
     size_t datalen = 5;
     bool passed = true;
-    ctxObjT Ctx = initCtx(NULL, datalen, 0);
+    ctxObjT Ctx = initCtx(NULL, NULL, datalen, 0);
 
     /* casual move test */
     ASSERT(mvRight(Ctx) == SUCCESS, "casual move: retval check");
@@ -1012,7 +1067,7 @@ test_mvLeft(void){
     /* 5 is just some random positive number for testing */
     size_t datalen = 5;
     bool passed = true;
-    ctxObjT Ctx = initCtx(NULL, datalen, 0);
+    ctxObjT Ctx = initCtx(NULL, NULL, datalen, 0);
 
     /* casual move test */
     /* simulate move right to avoid looparound */
@@ -1046,7 +1101,7 @@ test_incData(void){
     /* 5 is just some random positive number for testing */
     size_t datalen = 5;
     bool passed = true;
-    ctxObjT Ctx = initCtx(NULL, datalen, 0);
+    ctxObjT Ctx = initCtx(NULL, NULL, datalen, 0);
 
     /* zero indexes will also test initCtx which must set start index to 0 */
 
@@ -1078,7 +1133,7 @@ test_decData(void){
     /* 5 is just some random positive number for testing */
     size_t datalen = 5;
     bool passed = true;
-    ctxObjT Ctx = initCtx(NULL, datalen, 0);
+    ctxObjT Ctx = initCtx(NULL, NULL, datalen, 0);
 
     /* zero indexes will also test initCtx which must set start index to 0 */
 
@@ -1108,68 +1163,14 @@ test_decData(void){
     return passed;
 }
 
-static bool
-test_getMatchingClosing(){
-    bool passed = true;
-    size_t closing;
-    /*                0123456789 */
-    char tstring[] = "+[-].][+";
-    size_t len = strlen(tstring);
-
-    /* test pre opening */
-    closing = getMatchingClosing(0, len, tstring);
-    ASSERT(closing == 0, "retval: pre opening bracket");
-
-    /* test on opening */
-    closing = getMatchingClosing(1, len, tstring);
-    ASSERT(closing == 3, "retval: on opening bracket");
-    
-    /* test after opening & before closing */
-    closing = getMatchingClosing(2, len, tstring);
-    ASSERT(closing == 0, "retval: after opening/pre closing bracket");
-    
-    /* test on closing */
-    closing = getMatchingClosing(3, len, tstring);
-    ASSERT(closing == 0, "retval: on closing bracket");
-    
-    /* test after closing */
-    closing = getMatchingClosing(4, len, tstring);
-    ASSERT(closing == 0, "retval: after closing bracket");
-
-    /* test reversed */
-    closing = getMatchingClosing(5, len, tstring);
-    ASSERT(closing == 0, "retval: reversed");
-
-    /* test no closing */
-    closing = getMatchingClosing(6, len, tstring);
-    ASSERT(closing == 0, "retval: no closing");
-
-    /* test no opening */
-    closing = getMatchingClosing(0, 1, "]+");
-    ASSERT(closing == 0, "retval: no opening");
-
-    /* test no opening & closing */
-    closing = getMatchingClosing(0, 2, "+-.");
-    ASSERT(closing == 0, "retval: no opening & closing");
-
-    /* test empty string */
-    closing = getMatchingClosing(0, 0, "");
-    ASSERT(closing == 0, "retval: empty string");
-
-    /* test null string */
-    closing = getMatchingClosing(0, len, NULL);
-    ASSERT(closing == 0, "retval: NULL ptr");
-
-    return passed;
-}
 
 static bool
 test_jmp(){
     bool passed = true;
     int retval;
 
-    ctxObjT Ctx = initCtx(NULL, 0, 0);
-    StrToIns(Ctx, "+[+--]+"); 
+    ctxObjT Ctx = initCtx(NULL,"+[+--]+", 0, 0);
+    //StrToIns(Ctx, "+[+--]+"); 
     /* test jump to higher index */
     retval = jmp(Ctx->ins, 5);
     ASSERT(Ctx->ins->index == 5, "set index: higher index");
@@ -1206,7 +1207,6 @@ test(void){
         test_mvLeft,
         test_incData,
         test_decData,
-        test_getMatchingClosing,
         test_jmp,
     };
 
