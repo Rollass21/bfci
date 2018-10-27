@@ -1,7 +1,7 @@
 #include "bfci.h"
 
 static int mvRight(ctxObjT);
-static int  mvLeft(ctxObjT);
+static int mvLeft (ctxObjT);
 static int incData(ctxObjT);
 static int decData(ctxObjT);
 static int outData(ctxObjT);
@@ -122,7 +122,7 @@ handleArgs(int argc,
  * @dest - Position/Index on which to set instruciton tape index
  *
  * Used to jump between instructions.
- * On correct jump, returns destination index.
+ * On correct jump, returns destination index and sets flag jumped.
  */
 static
 int jmp(insObjT insObj, size_t dest){
@@ -614,6 +614,7 @@ void printStack(ctxObjT Ctx) {
     return;
 }
 
+// TODO make these into list of all flags with their str rep and value to just for loop through them
 static
 void printFlags(ctxObjT Ctx){
     if (!Ctx || !Ctx->stack){
@@ -623,17 +624,17 @@ void printFlags(ctxObjT Ctx){
 
     printf("value: %u\n", flags);
 
-    printf("%u CTX_RUNNING\n",          (flags & CTX_RUNNING)          ? 1 : 0); 
-    printf("%u CTX_COMPLETED\n",        (flags & CTX_COMPLETED)        ? 1 : 0);
-    printf("%u DATA_PENDING_OUT\n",     (flags & DATA_PENDING_OUT)     ? 1 : 0);
-    printf("%u DATA_PENDING_IN\n",      (flags & DATA_PENDING_IN)      ? 1 : 0);
-    printf("%u DATA_ALLOW_LOOPED\n",    (flags & DATA_ALLOW_LOOPED)    ? 1 : 0);
-    printf("%u DATA_ALLOW_OVERFLOW\n",  (flags & DATA_ALLOW_OVERFLOW)  ? 1 : 0);
-    printf("%u DATA_ALLOW_UNDERFLOW\n", (flags & DATA_ALLOW_UNDERFLOW) ? 1 : 0);
-    printf("%u DATA_DYNAMIC_GROW\n",    (flags & DATA_DYNAMIC_GROW)    ? 1 : 0);
-    printf("%u PRINT_DIAGNOSTICS\n",    (flags & PRINT_DIAGNOSTICS)    ? 1 : 0);
-    printf("%u TEST\n",                 (flags & TEST)                 ? 1 : 0);
-    printf("%u TEST_STRICT\n",          (flags & TEST_STRICT)          ? 1 : 0);
+    printf("%u CTX_RUNNING\n",           (flags & CTX_RUNNING)              ? 1 : 0); 
+    printf("%u CTX_COMPLETED\n",         (flags & CTX_COMPLETED)            ? 1 : 0);
+    printf("%u DATA_PENDING_OUT\n",      (flags & DATA_PENDING_OUT)         ? 1 : 0);
+    printf("%u DATA_PENDING_IN\n",       (flags & DATA_PENDING_IN)          ? 1 : 0);
+    printf("%u DATA_ALLOW_LOOPAROUND\n", (flags & DATA_ALLOW_LOOPAROUND)    ? 1 : 0);
+    printf("%u DATA_ALLOW_OVERFLOW\n",   (flags & DATA_ALLOW_OVERFLOW)      ? 1 : 0);
+    printf("%u DATA_ALLOW_UNDERFLOW\n",  (flags & DATA_ALLOW_UNDERFLOW)     ? 1 : 0);
+    printf("%u DATA_DYNAMIC_GROW\n",     (flags & DATA_ALLOW_DYNAMIC_GROW)  ? 1 : 0);
+    printf("%u PRINT_DIAGNOSTICS\n",     (flags & PRINT_DIAGNOSTICS)        ? 1 : 0);
+    printf("%u TEST\n",                  (flags & TEST)                     ? 1 : 0);
+    printf("%u TEST_STRICT\n",           (flags & TEST_STRICT)              ? 1 : 0);
     
     return;
 }

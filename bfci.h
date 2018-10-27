@@ -61,33 +61,44 @@ enum {
 #define NASSERT(x, name)  ASSERT(!(x), name)
 
 /*  FLAGS DEFINITIONS */
-/* int size is at least 16 bits */
+/* defaults to int with minimum of 2 bytes, for anything bigger use: 
+     
+ */
+/* if you are using vim, theres a cute lil way of doing these "lists" with g Ctrl+a ;-) */
+/* states of the machine itself */
 typedef enum {
-    /* states of machine itself */
-    /* if you are using vim, theres a cute lil way of doing these "lists" with g Ctrl+a ;-) */
-    /* TODO Will be used in future for async execution */
-    CTX_RUNNING              =       1,
+    CTX_RUNNING              = 1 <<  1,
     CTX_COMPLETED            = 1 <<  2,
-    DATA_PENDING_OUT         = 1 <<  3,
-    DATA_PENDING_IN          = 1 <<  4,
-
-    /* Allowed to be set by user */
-    DATA_ALLOW_LOOPED        = 1 <<  5,  
-    DATA_ALLOW_OVERFLOW      = 1 <<  6,  
-    DATA_ALLOW_UNDERFLOW     = 1 <<  7,  
-    DATA_DYNAMIC_GROW        = 1 <<  8, 
-    PRINT_DIAGNOSTICS        = 1 <<  9,
-    TEST                     = 1 << 10,
-    TEST_STRICT              = 1 << 11,
-
+    PRINT_DIAGNOSTICS        = 1 <<  3,
+    TEST                     = 1 <<  4,
+    TEST_STRICT              = 1 <<  5,
 } ctxFlags;
 
-/* DATA TYPES DECALRATIONS */
+/* states of the data object */
+typedef enum {
+    DATA_PENDING_OUT         = 1 <<  1,
+    DATA_PENDING_IN          = 1 <<  2,
+    DATA_ALLOW_LOOPAROUND    = 1 <<  3,  
+    DATA_LOOPED              = 1 <<  4,
+    DATA_ALLOW_OVERFLOW      = 1 <<  5,  
+    DATA_OVERFLOW            = 1 <<  6,
+    DATA_ALLOW_UNDERFLOW     = 1 <<  7,  
+    DATA_UNDERFLOW           = 1 <<  8,
+    DATA_ALLOW_DYNAMIC_GROW  = 1 <<  9, 
+} dataFlags;
+
+/* states of the ins object */
+typedef enum {
+    INS_JUMPED               = 1 <<  0,
+    INS_RLE                  = 1 <<  1,
+} insFlags;
+
+/* GENERAL DATA TYPEDEFS */
 typedef unsigned char uchar;
 typedef unsigned int uint;
-typedef char bool;
+typedef char     bool;
 
-/* {*}Obj are always pointers and need to be initialized */
+/* {*}ObjT are always pointers and need to be initialized */
 typedef struct _ctxObjT     *ctxObjT;
 typedef struct _dataObjT    *dataObjT;
 typedef struct _insObjT     *insObjT;
@@ -140,7 +151,7 @@ struct _stackCellT {
 };
 
 /*
- * _stackObjT   -- Object containing 
+ * _stackObjT   -- Object containing while-end jump locations
  */
 struct _stackObjT {
     size_t len;             /* number of cells in stack array */
@@ -148,10 +159,10 @@ struct _stackObjT {
 };
 
 /* 
- * _InsSetT     -- Information about BrainFuck instruction set 
+ * _insSetT     -- Instruction set command specifics
  */
 struct _insSetT {
-    const char *name;       /* name of operation or NULL at end of object */
+    const char *name;       /* name of operation or NULL at end of instructions list */
     char opcode;            /* identifier of specific operation */
     cmd command;            /* operation specific function to call */
 };
