@@ -4,71 +4,90 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.8	//
-ALLOCFAIL	bfci.h	32;"	d
-ALLOCJMP	bfci.h	24;"	d
-ASSERT	bfci.h	60;"	d
+ALLOCFAIL	bfci.h	33;"	d
+ALLOCJMP	bfci.h	25;"	d
 BFCI_H	bfci.h	2;"	d
-BIT_SET_FALSE	bfci.h	51;"	d
-BIT_SET_TRUE	bfci.h	50;"	d
-BIT_TOGGLE	bfci.h	49;"	d
-CASE_FAIL	bfci.h	56;"	d
-CASE_PASS	bfci.h	55;"	d
+BIT_SET_FALSE	bfci.h	64;"	d
+BIT_SET_TRUE	bfci.h	63;"	d
+BIT_TOGGLE	bfci.h	62;"	d
 CC	makefile	/^CC = gcc # compiler used: gcc$/;"	m
-CFLAGS	makefile	/^CFLAGS = -O0 -ggdb -Wall #-Werror$/;"	m
-CTX_COMPLETED	bfci.h	/^    CTX_COMPLETED            = 1 <<  2,$/;"	e	enum:__anon2
-CTX_RUNNING	bfci.h	/^    CTX_RUNNING              =       1,$/;"	e	enum:__anon2
-DATAMAX	bfci.h	22;"	d
-DATAMAXLEN	bfci.h	25;"	d
-DATAMIN	bfci.h	23;"	d
-DATA_ALLOW_LOOPED	bfci.h	/^    DATA_ALLOW_LOOPED        = 1 <<  5,  $/;"	e	enum:__anon2
-DATA_ALLOW_OVERFLOW	bfci.h	/^    DATA_ALLOW_OVERFLOW      = 1 <<  6,  $/;"	e	enum:__anon2
-DATA_ALLOW_UNDERFLOW	bfci.h	/^    DATA_ALLOW_UNDERFLOW     = 1 <<  7,  $/;"	e	enum:__anon2
-DATA_DYNAMIC_GROW	bfci.h	/^    DATA_DYNAMIC_GROW        = 1 <<  8, $/;"	e	enum:__anon2
-DATA_PENDING_IN	bfci.h	/^    DATA_PENDING_IN          = 1 <<  4,$/;"	e	enum:__anon2
-DATA_PENDING_OUT	bfci.h	/^    DATA_PENDING_OUT         = 1 <<  3,$/;"	e	enum:__anon2
-DEC	bfci.h	42;"	d
-DO	bfci.h	46;"	d
-EXIT	bfci.h	21;"	d
-FAIL	bfci.h	18;"	d
-FALSE	bfci.h	20;"	d
-FILEFAIL	bfci.h	33;"	d
-HEADERS	makefile	/^HEADERS = bfci.h # .h files$/;"	m
-INC	bfci.h	41;"	d
-LIFOPop	funcs.c	/^LIFOPop(ctxObjT Ctx){$/;"	f	file:
-LIFOPush	funcs.c	/^LIFOPush(ctxObjT Ctx,$/;"	f	file:
-LIFOPushNew	funcs.c	/^LIFOPushNew(ctxObjT Ctx,$/;"	f	file:
+CFLAGS	makefile	/^CFLAGS = -O0 -ggdb -Wall -pg #-Werror$/;"	m
+CTX_COMPLETED	bfci.h	/^    CTX_COMPLETED             = 1 <<  3,$/;"	e	enum:__anon3
+CTX_RUNNING	bfci.h	/^    CTX_RUNNING               = 1 <<  1,$/;"	e	enum:__anon3
+CTX_STOPPED	bfci.h	/^    CTX_STOPPED               = 1 <<  2,$/;"	e	enum:__anon3
+DATAMAX	bfci.h	23;"	d
+DATAMAXLEN	bfci.h	26;"	d
+DATAMIN	bfci.h	24;"	d
+DATA_ALLOW_DYNAMIC_GROW	bfci.h	/^    DATA_ALLOW_DYNAMIC_GROW   = 1 <<  9, $/;"	e	enum:__anon4
+DATA_ALLOW_LOOPAROUND	bfci.h	/^    DATA_ALLOW_LOOPAROUND     = 1 <<  3,  $/;"	e	enum:__anon4
+DATA_ALLOW_OVERFLOW	bfci.h	/^    DATA_ALLOW_OVERFLOW       = 1 <<  5,  $/;"	e	enum:__anon4
+DATA_ALLOW_UNDERFLOW	bfci.h	/^    DATA_ALLOW_UNDERFLOW      = 1 <<  7,  $/;"	e	enum:__anon4
+DATA_LOOPED	bfci.h	/^    DATA_LOOPED               = 1 <<  4,$/;"	e	enum:__anon4
+DATA_OVERFLOW	bfci.h	/^    DATA_OVERFLOW             = 1 <<  6,$/;"	e	enum:__anon4
+DATA_PENDING_IN	bfci.h	/^    DATA_PENDING_IN           = 1 <<  2,$/;"	e	enum:__anon4
+DATA_PENDING_OUT	bfci.h	/^    DATA_PENDING_OUT          = 1 <<  1,$/;"	e	enum:__anon4
+DATA_UNDERFLOW	bfci.h	/^    DATA_UNDERFLOW            = 1 <<  8,$/;"	e	enum:__anon4
+DEBUG_PRINT_DIAGNOSTICS	bfci.h	/^    DEBUG_PRINT_DIAGNOSTICS   = 1 <<  4,$/;"	e	enum:__anon3
+DEBUG_TEST	bfci.h	/^    DEBUG_TEST                = 1 <<  5,$/;"	e	enum:__anon3
+DEBUG_TEST_STRICT	bfci.h	/^    DEBUG_TEST_STRICT         = 1 <<  6,$/;"	e	enum:__anon3
+EXIT	bfci.h	22;"	d
+FAIL	bfci.h	19;"	d
+FALSE	bfci.h	21;"	d
+FILEFAIL	bfci.h	34;"	d
+FLAG_SET	bfci.h	67;"	d
+FLAG_SET_FALSE	bfci.h	69;"	d
+FLAG_SET_TRUE	bfci.h	68;"	d
+FLAG_TOGGLE	bfci.h	66;"	d
+HEADERS	makefile	/^HEADERS = bfci.h tcolors.h # .h files$/;"	m
+INS_FROM_FILE	bfci.h	/^    INS_FROM_FILE             = 1 <<  2,$/;"	e	enum:__anon5
+INS_FROM_STRING	bfci.h	/^    INS_FROM_STRING           = 1 <<  1,$/;"	e	enum:__anon5
+INS_JUMPED	bfci.h	/^    INS_JUMPED                = 1 <<  0,$/;"	e	enum:__anon5
+LIFOPop	inssetf.c	/^LIFOPop(ctxObjT Ctx){$/;"	f
+LIFOPush	inssetf.c	/^LIFOPush(ctxObjT Ctx,$/;"	f
+LIFOPushNew	inssetf.c	/^LIFOPushNew(ctxObjT Ctx,$/;"	f
 MAINSRC	makefile	/^MAINSRC = main.c # main source file, in most cases main.c$/;"	m
-MVL	bfci.h	40;"	d
-MVR	bfci.h	39;"	d
-NASSERT	bfci.h	61;"	d
-NDFINS	bfci.h	34;"	d
-NDFUSAGE	bfci.h	35;"	d
-NOLOOPEND	bfci.h	30;"	d
-NOLOOPSTART	bfci.h	31;"	d
+NDFINS	bfci.h	35;"	d
+NDFUSAGE	bfci.h	36;"	d
+NOLOOPEND	bfci.h	31;"	d
+NOLOOPSTART	bfci.h	32;"	d
 OBJS	makefile	/^OBJS = ${SRCS:.c=.o} $(MAINSRC:.c=.o)$/;"	m
-OVERFLOW	bfci.h	28;"	d
-PASTBOUNDS	bfci.h	36;"	d
-PRINT_DIAGNOSTICS	bfci.h	/^    PRINT_DIAGNOSTICS        = 1 <<  9,$/;"	e	enum:__anon2
+OPC_DECD	bfci.h	44;"	d
+OPC_DO	bfci.h	48;"	d
+OPC_INCD	bfci.h	43;"	d
+OPC_MVLD	bfci.h	42;"	d
+OPC_MVRD	bfci.h	41;"	d
+OPC_STDI	bfci.h	46;"	d
+OPC_STDO	bfci.h	45;"	d
+OPC_WHILE	bfci.h	47;"	d
+OP_decData	insset.c	/^OP_decData(ctxObjT Ctx){$/;"	f
+OP_incData	insset.c	/^OP_incData(ctxObjT Ctx){$/;"	f
+OP_inpData	insset.c	/^OP_inpData(ctxObjT Ctx){$/;"	f
+OP_loopBeg	insset.c	/^OP_loopBeg(ctxObjT Ctx){$/;"	f
+OP_loopEnd	insset.c	/^OP_loopEnd(ctxObjT Ctx){$/;"	f
+OP_mvLeft	insset.c	/^OP_mvLeft(ctxObjT Ctx){$/;"	f
+OP_mvRight	insset.c	/^OP_mvRight(ctxObjT Ctx){$/;"	f
+OP_outData	insset.c	/^OP_outData(ctxObjT Ctx){$/;"	f
+OVERFLOW	bfci.h	29;"	d
+PASTBOUNDS	bfci.h	37;"	d
+PLACEHOLDER	bfci.h	/^    PLACEHOLDER               = 1 <<  0,$/;"	e	enum:__anon6
 PROGRAM	makefile	/^PROGRAM = bfci # name of executable$/;"	m
-SRCS	makefile	/^SRCS = funcs.c # .c files containing funcs$/;"	m
-STDI	bfci.h	44;"	d
-STDO	bfci.h	43;"	d
-SUCCESS	bfci.h	17;"	d
-StrToIns	funcs.c	/^StrToIns(ctxObjT Ctx, const char* string){$/;"	f
+QUIT	bfci.h	38;"	d
+SRCS	makefile	/^SRCS = bfci.c insset.c inssetf.c presets.c # .c files containing funcs$/;"	m
+SUCCESS	bfci.h	18;"	d
 TCOLORS_H	tcolors.h	2;"	d
-TEST	bfci.h	/^    TEST                     = 1 << 10,$/;"	e	enum:__anon2
-TEST_STRICT	bfci.h	/^    TEST_STRICT              = 1 << 11,$/;"	e	enum:__anon2
-TRUE	bfci.h	19;"	d
-UNDERFLOW	bfci.h	29;"	d
-WHILE	bfci.h	45;"	d
+TRUE	bfci.h	20;"	d
+UNDERFLOW	bfci.h	30;"	d
 _ctxObjT	bfci.h	/^struct _ctxObjT {$/;"	s
 _dataObjT	bfci.h	/^struct _dataObjT{$/;"	s
+_flagsettingsT	bfci.h	/^typedef struct _flagsettingsT {$/;"	s
 _insObjT	bfci.h	/^struct _insObjT{$/;"	s
 _insSetT	bfci.h	/^struct _insSetT {$/;"	s
+_settingsT	bfci.h	/^typedef struct _settingsT {$/;"	s
 _stackCellT	bfci.h	/^struct _stackCellT {$/;"	s
 _stackObjT	bfci.h	/^struct _stackObjT {$/;"	s
-att	bfci.h	53;"	d
-bool	bfci.h	/^typedef char bool;$/;"	t
+addsrc	bfci.c	/^addsrc(ctxObjT Ctx,$/;"	f
+att	bfci.h	71;"	d
+bool	bfci.h	/^typedef char     bool;$/;"	t
 cBLUE	tcolors.h	8;"	d
 cERR	tcolors.h	11;"	d
 cGREEN	tcolors.h	7;"	d
@@ -76,81 +95,99 @@ cNO	tcolors.h	5;"	d
 cRED	tcolors.h	6;"	d
 cWARN	tcolors.h	12;"	d
 cWHITE	tcolors.h	9;"	d
-cmd	bfci.h	/^typedef int    (*cmd)       (ctxObjT Ctx);$/;"	t
-command	bfci.h	/^    cmd command;            \/* operation specific function to call *\/$/;"	m	struct:_insSetT
-ctxFlags	bfci.h	/^} ctxFlags;$/;"	t	typeref:enum:__anon2
+canBeExecutedCtx	bfci.c	/^canBeExecutedCtx(ctxObjT Ctx) {$/;"	f
+cmdT	bfci.h	/^typedef int     (*cmdT)       (ctxObjT Ctx);$/;"	t
+command	bfci.h	/^    cmdT command;           \/* operation specific function to call *\/$/;"	m	struct:_insSetT
+ctx	bfci.h	/^    ctxFlagsT    ctx;$/;"	m	struct:_flagsettingsT
+ctxFlagsT	bfci.h	/^} ctxFlagsT;$/;"	t	typeref:enum:__anon3
 ctxObjT	bfci.h	/^typedef struct _ctxObjT     *ctxObjT;$/;"	t	typeref:struct:_ctxObjT
+data	bfci.h	/^    dataFlagsT   data;$/;"	m	struct:_flagsettingsT
 data	bfci.h	/^    dataObjT data;          \/* data object containing data over which instruction operate *\/$/;"	m	struct:_ctxObjT
+dataFlagsT	bfci.h	/^} dataFlagsT;$/;"	t	typeref:enum:__anon4
 dataObjT	bfci.h	/^typedef struct _dataObjT    *dataObjT;$/;"	t	typeref:struct:_dataObjT
-decData	funcs.c	/^decData(ctxObjT Ctx){$/;"	f	file:
+debug	presets.c	/^debug = {$/;"	v
+defaults	presets.c	/^defaults = {$/;"	v
 end	bfci.h	/^           end;             \/* index of closing bracket, as END in insSet *\/$/;"	m	struct:_stackCellT
-execCtx	funcs.c	/^execCtx(ctxObjT Ctx){$/;"	f	file:
-execIns	funcs.c	/^execIns(ctxObjT Ctx){$/;"	f	file:
+execCtx	bfci.c	/^execCtx(ctxObjT Ctx){$/;"	f	file:
+execIns	bfci.c	/^execIns(ctxObjT Ctx){$/;"	f	file:
 false	bfci.h	/^    false = 0,$/;"	e	enum:__anon1
-flags	bfci.h	/^    uint flags;             \/* flags containing states of machine *\/$/;"	m	struct:_ctxObjT
-freeCtx	funcs.c	/^void freeCtx(ctxObjT Ctx){$/;"	f
-freeData	funcs.c	/^freeData(dataObjT dataObj){$/;"	f	file:
-freeIns	funcs.c	/^freeIns(insObjT insObj){$/;"	f	file:
-freeStack	funcs.c	/^freeStack(stackObjT stackObj){$/;"	f	file:
-getMatchingClosing	funcs.c	/^getMatchingClosing(size_t currindex, size_t lastindex, const char* string){$/;"	f	file:
-getsrc	funcs.c	/^getsrc(const char *srcFilePath,$/;"	f	file:
-incData	funcs.c	/^incData(ctxObjT Ctx){$/;"	f	file:
-incPC	funcs.c	/^incPC(ctxObjT Ctx){$/;"	f	file:
+flags	bfci.h	/^    ctxFlagsT flags;        \/* flags containing states of machine *\/$/;"	m	struct:_ctxObjT
+flags	bfci.h	/^    dataFlagsT flags;       \/* information about the state of dataObj *\/$/;"	m	struct:_dataObjT
+flags	bfci.h	/^    flagsettingsT flags;$/;"	m	struct:_settingsT
+flags	bfci.h	/^    insFlagsT flags;        \/* information about the state of insObj *\/$/;"	m	struct:_insObjT
+flags	bfci.h	/^    stackFlagsT flags;      \/* information about the state of stackObj *\/$/;"	m	struct:_stackObjT
+flagsettingsT	bfci.h	/^typedef struct _flagsettingsT flagsettingsT;$/;"	t	typeref:struct:_flagsettingsT
+flagsettingsT	bfci.h	/^} flagsettingsT;$/;"	t	typeref:struct:_flagsettingsT
+freeCtx	bfci.c	/^void freeCtx(ctxObjT Ctx){$/;"	f
+freeData	bfci.c	/^freeData(dataObjT dataObj){$/;"	f	file:
+freeIns	bfci.c	/^freeIns(insObjT insObj){$/;"	f	file:
+freeStack	bfci.c	/^freeStack(stackObjT stackObj){$/;"	f	file:
+fromFile	bfci.c	/^fromFile(void* insObj, ...){$/;"	f	file:
+fromString	bfci.c	/^fromString(void* insObj, ...){$/;"	f	file:
+getMatchingClosing	inssetf.c	/^getMatchingClosing(insObjT insObj){$/;"	f
+getsrc	bfci.c	/^getsrc(insObjT insObj,$/;"	f	file:
+handleArgs	bfci.c	/^handleArgs(int argc,$/;"	f
+hasSource	bfci.c	/^hasSource(ctxObjT Ctx){$/;"	f
+incPC	bfci.c	/^incPC(ctxObjT Ctx){$/;"	f	file:
 index	bfci.h	/^    size_t index;           \/* index of current data block *\/$/;"	m	struct:_dataObjT
 index	bfci.h	/^    size_t index;           \/* index of current instruction *\/$/;"	m	struct:_insObjT
-initCtx	funcs.c	/^initCtx(const char* srcFilePath,$/;"	f
-initData	funcs.c	/^dataObjT initData(size_t datalen){$/;"	f	file:
-initIns	funcs.c	/^insObjT initIns(const char* srcFilePath){$/;"	f	file:
-initStack	funcs.c	/^stackObjT initStack(){$/;"	f	file:
-inpData	funcs.c	/^inpData(ctxObjT Ctx){$/;"	f	file:
+initCtx	bfci.c	/^initCtx(settingsT settings) {$/;"	f	file:
+initData	bfci.c	/^initData(size_t datalen,$/;"	f	file:
+initIns	bfci.c	/^initIns(const char* srcpath,$/;"	f	file:
+initStack	bfci.c	/^initStack(settingsT settings){$/;"	f	file:
+ins	bfci.h	/^    insFlagsT    ins;$/;"	m	struct:_flagsettingsT
 ins	bfci.h	/^    insObjT ins;            \/* instruction object containing source code to execute *\/$/;"	m	struct:_ctxObjT
+insFlagsT	bfci.h	/^} insFlagsT;$/;"	t	typeref:enum:__anon5
 insObjT	bfci.h	/^typedef struct _insObjT     *insObjT;$/;"	t	typeref:struct:_insObjT
-insSet	funcs.c	/^static const insSetT insSet[] = {$/;"	v	file:
+insSet	insset.c	/^const insSetT insSet[] = {  $/;"	v
 insSetT	bfci.h	/^typedef struct _insSetT     insSetT;$/;"	t	typeref:struct:_insSetT
-interpret	funcs.c	/^interpret(ctxObjT Ctx){$/;"	f
-isBalanced	funcs.c	/^bool isBalanced(insObjT insObj){$/;"	f	file:
-isInstruction	funcs.c	/^int isInstruction(char c) {$/;"	f	file:
-isValidCtx	funcs.c	/^isValidCtx(ctxObjT Ctx){$/;"	f	file:
-jmp	funcs.c	/^int jmp(insObjT insObj, size_t dest){$/;"	f	file:
-jumped	bfci.h	/^    bool jumped;            \/* whether current instruction was jumped on by previous one *\/$/;"	m	struct:_insObjT
+interpret	bfci.c	/^interpret(ctxObjT Ctx){$/;"	f
+isBalanced	bfci.c	/^bool isBalanced(insObjT insObj){$/;"	f	file:
+isInstruction	bfci.c	/^isInstruction(char c) {$/;"	f	file:
+isValidCtx	bfci.c	/^isValidCtx(ctxObjT Ctx) {$/;"	f
+jmp	inssetf.c	/^jmp(insObjT insObj, size_t dest){$/;"	f
 len	bfci.h	/^    size_t len;             \/* length of array *\/                   $/;"	m	struct:_dataObjT
 len	bfci.h	/^    size_t len;             \/* length of array *\/                   $/;"	m	struct:_insObjT
 len	bfci.h	/^    size_t len;             \/* number of cells in stack array *\/$/;"	m	struct:_stackObjT
-loopBeg	funcs.c	/^loopBeg(ctxObjT Ctx){$/;"	f	file:
-loopEnd	funcs.c	/^loopEnd(ctxObjT Ctx){$/;"	f	file:
 main	main.c	/^int main(int argc, char **argv){$/;"	f
-mvLeft	funcs.c	/^int mvLeft(ctxObjT Ctx){$/;"	f	file:
-mvRight	funcs.c	/^int mvRight(ctxObjT Ctx){$/;"	f	file:
-name	bfci.h	/^    const char *name;       \/* name of operation or NULL at end of object *\/$/;"	m	struct:_insSetT
-opcode	bfci.h	/^    char opcode;            \/* identifier of specific operation *\/$/;"	m	struct:_insSetT
-outData	funcs.c	/^outData(ctxObjT Ctx){$/;"	f	file:
-printCtx	funcs.c	/^void printCtx(ctxObjT Ctx){$/;"	f
-printData	funcs.c	/^void printData(ctxObjT Ctx){$/;"	f	file:
-printFlags	funcs.c	/^void printFlags(ctxObjT Ctx){$/;"	f	file:
-printHelp	funcs.c	/^void printHelp(){$/;"	f
-printIns	funcs.c	/^void printIns(ctxObjT Ctx){$/;"	f	file:
-printStack	funcs.c	/^void printStack(ctxObjT Ctx) {$/;"	f	file:
-pushIns	funcs.c	/^int pushIns(char c, insObjT insObj){$/;"	f	file:
-resetCtx	funcs.c	/^resetCtx(ctxObjT Ctx){$/;"	f	file:
-resetData	funcs.c	/^resetData(dataObjT dataObj){$/;"	f	file:
-resetIns	funcs.c	/^resetIns(insObjT insObj){$/;"	f	file:
-resetStack	funcs.c	/^resetStack(stackObjT stackObj){$/;"	f	file:
+methodT	bfci.h	/^typedef int     (*methodT)    (void*, ...);$/;"	t
+name	bfci.h	/^    const char *name;       \/* name of operation or NULL at end of instructions list *\/$/;"	m	struct:_insSetT
+newCtx	bfci.c	/^newCtx(const char* srcpath,$/;"	f
+opc_decd	bfci.h	/^    opc_decd  = OPC_DECD,  $/;"	e	enum:__anon2
+opc_do	bfci.h	/^    opc_do    = OPC_DO,   $/;"	e	enum:__anon2
+opc_incd	bfci.h	/^    opc_incd  = OPC_INCD,  $/;"	e	enum:__anon2
+opc_mvld	bfci.h	/^    opc_mvld  = OPC_MVLD,  $/;"	e	enum:__anon2
+opc_mvrd	bfci.h	/^    opc_mvrd  = OPC_MVRD,$/;"	e	enum:__anon2
+opc_stdi	bfci.h	/^    opc_stdi  = OPC_STDI, $/;"	e	enum:__anon2
+opc_stdo	bfci.h	/^    opc_stdo  = OPC_STDO, $/;"	e	enum:__anon2
+opc_while	bfci.h	/^    opc_while = OPC_WHILE,$/;"	e	enum:__anon2
+opcode	bfci.h	/^    opcodeT opcode;         \/* identifier of specific operation *\/$/;"	m	struct:_insSetT
+opcodeT	bfci.h	/^} opcodeT;$/;"	t	typeref:enum:__anon2
+printCtx	bfci.c	/^void printCtx(ctxObjT Ctx){$/;"	f
+printData	bfci.c	/^void printData(ctxObjT Ctx){$/;"	f	file:
+printFlags	bfci.c	/^void printFlags(ctxObjT Ctx){$/;"	f	file:
+printHelp	bfci.c	/^void printHelp(){$/;"	f
+printIns	bfci.c	/^void printIns(ctxObjT Ctx){$/;"	f	file:
+printStack	bfci.c	/^void printStack(ctxObjT Ctx) {$/;"	f	file:
+pushIns	bfci.c	/^pushIns(uchar ins, insObjT insObj){$/;"	f	file:
+restoreCtx	bfci.c	/^restoreCtx(ctxObjT Ctx){$/;"	f	file:
+restoreData	bfci.c	/^restoreData(ctxObjT Ctx){$/;"	f	file:
+restoreIns	bfci.c	/^restoreIns(ctxObjT Ctx){$/;"	f	file:
+restoreStack	bfci.c	/^restoreStack(ctxObjT Ctx){$/;"	f	file:
+settings	bfci.h	/^    settingsT settings;     \/* copy of initial settings used to restore ctxObj *\/$/;"	m	struct:_ctxObjT
+settingsT	bfci.h	/^typedef struct _settingsT settingsT;$/;"	t	typeref:struct:_settingsT
+settingsT	bfci.h	/^} settingsT;$/;"	t	typeref:struct:_settingsT
 srcpath	bfci.h	/^    char* srcpath;          \/* filepath of inputed BrainFuck source code *\/$/;"	m	struct:_insObjT
+stack	bfci.h	/^    stackFlagsT  stack;$/;"	m	struct:_flagsettingsT
 stack	bfci.h	/^    stackObjT stack;        \/* stack object used to store stacked bracket indexes *\/$/;"	m	struct:_ctxObjT
 stackCellT	bfci.h	/^typedef struct _stackCellT  stackCellT;$/;"	t	typeref:struct:_stackCellT
+stackFlagsT	bfci.h	/^} stackFlagsT;$/;"	t	typeref:enum:__anon6
 stackObjT	bfci.h	/^typedef struct _stackObjT   *stackObjT;$/;"	t	typeref:struct:_stackObjT
 start	bfci.h	/^    size_t start,           \/* index of opening bracket, as WHILE in insSet *\/$/;"	m	struct:_stackCellT
-tape	bfci.h	/^    char *tape;             \/* instruction array *\/                              $/;"	m	struct:_insObjT
 tape	bfci.h	/^    stackCellT *tape;       \/* stack array containing bracket pairs *\/$/;"	m	struct:_stackObjT
-tape	bfci.h	/^    uchar *tape;    \/* data array *\/                              $/;"	m	struct:_dataObjT
-test	funcs.c	/^test(void){$/;"	f
-test_decData	funcs.c	/^test_decData(void){$/;"	f	file:
-test_getMatchingClosing	funcs.c	/^test_getMatchingClosing(){$/;"	f	file:
-test_incData	funcs.c	/^test_incData(void){$/;"	f	file:
-test_jmp	funcs.c	/^test_jmp(){$/;"	f	file:
-test_mvLeft	funcs.c	/^test_mvLeft(void){$/;"	f	file:
-test_mvRight	funcs.c	/^test_mvRight(void){$/;"	f	file:
-testfunc	bfci.h	/^typedef bool   (testfunc)   (void);$/;"	t
+tape	bfci.h	/^    uchar *tape;            \/* data array *\/                              $/;"	m	struct:_dataObjT
+tape	bfci.h	/^    uchar *tape;            \/* instruction array *\/                              $/;"	m	struct:_insObjT
+testfuncT	bfci.h	/^typedef bool    (testfuncT)   (void);$/;"	t
 true	bfci.h	/^    true = 1$/;"	e	enum:__anon1
 uchar	bfci.h	/^typedef unsigned char uchar;$/;"	t
 uint	bfci.h	/^typedef unsigned int uint;$/;"	t

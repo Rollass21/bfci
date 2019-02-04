@@ -13,6 +13,8 @@ handleArgs(int argc,
     bool given_srcpath = false;
     bool given_srcstring = false;
 
+    *srcpath = *srcstring = NULL;
+
     if (argc < 2) {
         printHelp();
         return QUIT;
@@ -55,14 +57,9 @@ handleArgs(int argc,
 }
 
 static int
-pushIns(uchar ins, insObjT insObj){
-    if (!insObj){
-        return FAIL;
-    }
-
-    // potential resize
+addInsCell(insObjT insObj, uchar opIndex, uint times, size_t matching){
     if (insObj->usedlen + 1 > insObj->len){
-        insObj->len += ALLOCJMP;
+        insObj->len += INSALLOCJMP;
 
         size_t memSize = insObj->len * sizeof(*insObj->tape);
 
@@ -74,32 +71,90 @@ pushIns(uchar ins, insObjT insObj){
         insObj = insObjCopy;
     }
 
-    // adding instruction
-    insObj->tape[insObj->usedlen++] = ins;
+    /* adding instruction */
+    insObj->tape[insObj->usedlen].opIndex = opIndex;
+    insObj->tape[insObj->usedlen].times = times;
+    insObj->tape[insObj->usedlen].matching = matching;
+    insObj->tape[insObj->usedlen].ismatched = false;
+    insObj->usedlen++;
 
     return SUCCESS;
 }
 
-/* 
- * isValidCtx()
- * Checks whether given object is properly initialized and ready to be executed
+/* pushIns()
+ * Pushes instruction @ins to instruction object's @insObj tape
  *
+ * @ins:    exact instruction to be pushed into tape
+ * @insObj: instruciton object to which @ins is pushed
+ *
+ * Returns SUCCESS on correct push, otherwise error specific definiton of
+ * value <0.
+ */
+static int
+pushIns(uchar opIndex, insObjT insObj){
+    if (!insObj){
+        return FAIL;
+    }
+
+    /* can do RLE only after initial push  */
+    if (insObj->usedlen > 0) {
+        insCellT* lastcell = &insObj->tape[insObj->usedlen - 1];
+
+        /* explicitly comparing to NULL because lastcell might be misleading */
+        if (lastcell != NULL) {
+            bool timesoverflow = (lastcell->times + 1 < lastcell->times);
+            bool same = (lastcell->opIndex == opIndex);
+            bool RLEable = (same && !timesoverflow && insSet[opIndex].RLEable);
+
+            if (RLEable) {
+                lastcell->times++;
+                return SUCCESS;
+            }
+        }
+    }
+
+    return addInsCell(insObj, opIndex, 1, 0);
+}
+
+/* isValidCtx()
+ * Checks whether given object is properly initialized and possible to be dereferenced
+ *
+ * @Ctx: object to be checked
+ *
+ * Returns true/false respectively on whether Ctx is valid.
  */
 bool
 isValidCtx(ctxObjT Ctx) {
-    if (!Ctx || !Ctx->data || !Ctx->ins || !Ctx->stack)
+    if (!Ctx || !Ctx->data || !Ctx->ins)
         return false;
 
     return true;
 }
 
+/* hasSource()
+ * Checks whether given object contains any sort of source
+ *
+ * @Ctx: object to be checked
+ *
+ * Returns true/false respectively on whether Ctx contains source.
+ */
 bool
 hasSource(ctxObjT Ctx){
-    if (!isValidCtx(Ctx)) return false;
 
-    return (Ctx->ins->flags & (INS_FROM_FILE | INS_FROM_STRING));
+    if (!isValidCtx(Ctx)) return false;
+    if (!(Ctx->ins->flags & (INS_FROM_FILE | INS_FROM_STRING))) return false;
+    if (Ctx->ins->usedlen == 0) return false;
+
+    return true;
 }
 
+/* hasSource()
+ * Checks whether given object is ready to be interpreted
+ *
+ * @Ctx: object to be checked
+ *
+ * Returns true/false respectively on whether Ctx is ready to be executed.
+ */
 bool
 canBeExecutedCtx(ctxObjT Ctx) {
     /* check if every object is allocated */
@@ -115,11 +170,12 @@ canBeExecutedCtx(ctxObjT Ctx) {
 };
 
 // TODO too slow, maybe a hash table in future?
-/*  isInstruction()
- *  Checks if given input c is valid opcode in InsSet object.
- *  If found, returns index of instruction, otherwise -1.
+/* isInstruction()
+ * Checks if given char @c is valid opcode in InsSet object.
  *
- *  @c: Possible instruction opcode to be checked
+ * @c: Possible instruction opcode to be checked
+ *
+ * If @c is valid instruction opcode, returns index of instruction, otherwise -1.
  */
 static int
 isInstruction(char c) {
@@ -131,6 +187,58 @@ isInstruction(char c) {
     return -1; 
 }
 
+/* isBalanced()
+ * Checks whether given instruction object's tape opening an closing brackets
+ * are balanced, used for syntax checking.
+ *
+ * @insObj: instruction object containing source to be checked for balanced
+ *          brackets
+ *
+ * Returns true/false respectively on whether @insObj's DO and WHILE instrucitons
+ * are balanced.
+ */
+static bool
+isBalanced(insObjT insObj){
+    if (!insObj || !insObj->tape) {
+        return TRUE;
+    }
+
+    size_t currindex = insObj->index;
+    long int count = 0;
+
+    /* if count gets below zero, closing bracket was used without pair opening bracket */
+    while (count >= 0 && currindex < insObj->usedlen){
+        switch (insSet[insObj->tape[currindex].opIndex].opcode){
+            case OPC_WHILE: 
+                count++;
+                break;
+
+            case OPC_DO:
+                count--;
+                break;
+
+            default:
+                break;
+        }
+
+        currindex++;
+    }
+
+    /* balanced brackets will set count to 0, more opening brackets would leave count>0 */
+    return (count == 0) ? TRUE : FALSE;
+}
+
+/*  fromFile()
+ *  One of methods used in getSrc() to obtain source code into @insObj.
+ *  Expects 2 arguments, the first is instruction object to which to enter the
+ *  source and the second should be a string containing path to BF source file.
+ *
+ *  @insObj:  Instruction object to which tape we want the source to be written
+ *  @...:     String (Char*) containing BF source file path
+ *
+ *  Returns SUCCESS on succesfull execution, otherwise specific error definition
+ *  of value <0.
+ */
 static int
 fromFile(void* insObj, ...){
     int index;            
@@ -165,9 +273,21 @@ fromFile(void* insObj, ...){
     return SUCCESS;
 }
 
+/*  fromString()
+ *  One of methods used in getSrc() to obtain source code into @insObj.
+ *  Expects 2 arguments, the first is instruction object to which to enter the
+ *  source and the second should be a string containing BF source code.
+ *
+ *  @insObj:  Instruction object to which tape we want the source to be written
+ *  @...:     String (Char*) containing BF source code 
+ *
+ *  Returns SUCCESS on succesfull execution, otherwise specific error definition
+ *  of value <0.
+ */
 static int
 fromString(void* insObj, ...){
     int index;            
+    int retval;
     va_list arglist;
     insObjT ins = insObj;
     va_start(arglist, insObj);
@@ -182,7 +302,7 @@ fromString(void* insObj, ...){
 
     while(*srcstring != '\0'){
         if ((index = isInstruction(*srcstring)) > -1){
-            pushIns(index, ins);
+            if ((retval = pushIns(index, ins)) != SUCCESS) return retval;
         }
 
         /* next char */
@@ -193,22 +313,32 @@ fromString(void* insObj, ...){
     return SUCCESS;
 }
 
-/* getsrc: Encodes instructions from Brainfuck source file into instruction tape
- *         Used to extract instructions from file.
- *  @insObj     Instruction object to which will be instructions saved
- *  @srcpath:   Filename of Brainfuck source file, set to NULL if not known or 
- *              will use @srcstring as a source.
- *  @srcstring: String containing Brainfuck source code, set to NULL if not
- *              known or will use @srcpath as a source.
+/* getsrc()
+ * Encodes instructions from Brainfuck source {file/code string} into
+ * instruction tape.
+ * Used to extract instructions from file or string.
  *
- * Its illegal to use both @srcpath and @srcpath to get the source,
+ * @insObj     Instruction object to which will be instructions saved
+ * @srcpath:   Filepath of Brainfuck source file, set to NULL if not known or 
+ *             will use @srcstring as a source.
+ * @srcstring: String containing Brainfuck source code, set to NULL if not
+ *             known or will use @srcpath as a source.
  *
- * Returns SUCCESS if properly initialized the insObj.
+ * Its unsupported to use both @srcpath and @srcstring to obtain the source, will
+ * result in not using either one of those, i.e. not fully initializing
+ * instruction object (In which case user needs to add the source by invoking
+ * addsrc() on context object after succesfull newCtx()).
+ *
+ *  Returns SUCCESS on proper initialization of @insObj (not entering any source
+ *  is aslo considered a SUCCESS), otherwise specific error definition of value
+ *  <0. If both @srcpath and @srcstring are !NULL, returns NDFUSAGE.
  */
 static int
 getsrc(insObjT insObj,
        const char* srcpath,
        const char* srcstring){
+
+    if (!insObj) return FAIL;
 
     const char* src = NULL;
     methodT fromWhat;
@@ -234,6 +364,26 @@ getsrc(insObjT insObj,
     return (!src) ? SUCCESS : fromWhat((void*) insObj, (void*) src);
 }
 
+/* addsrc()
+ * Encodes instructions from Brainfuck source {file/code string} into
+ * instruction tape.
+ * Used to extract instructions from file or string to Ctx after newCtx initialization.
+ *
+ * @insObj     Context object contaiing insObj to which will be instructions saved
+ * @srcpath:   Filepath of Brainfuck source file, set to NULL if not known or 
+ *             will use @srcstring as a source.
+ * @srcstring: String containing Brainfuck source code, set to NULL if not
+ *             known or will use @srcpath as a source.
+ *
+ * Its unsupported to use both @srcpath and @srcstring to obtain the source, will
+ * result in not using either one of those, i.e. not fully initializing
+ * instruction object.
+ *
+ *  Returns SUCCESS on proper initialization of @Ctx's insObj (not entering any source
+ *  is aslo considered a SUCCESS), otherwise specific error definition of value
+ *  <0. If both @srcpath and @srcstring are !NULL, returns NDFUSAGE.
+ *  In case @Ctx already contains any source, FAIL is returned.
+ */
 int
 addsrc(ctxObjT Ctx,
        const char* srcpath,
@@ -251,11 +401,18 @@ addsrc(ctxObjT Ctx,
     return getsrc(Ctx->ins, srcpath, srcstring);
 }
 
-/* 
- * insObjT: initiates Instruction Object
+/* initIns()
+ * Initializes Instruction Object
  *
- * @srcpath: file containing BF source, if NULL then instructions need to
- *               be set with StrToIns() before execution
+ * @srcpath:   Filepath of Brainfuck source file, set to NULL if not known or 
+ *             will use @srcstring as a source.
+ * @srcstring: String containing Brainfuck source code, set to NULL if not
+ *             known or will use @srcpath as a source.
+ * @settings:  Original settings that are written into new insObj, later used to
+ *             restore original state of insObj on repeated interpretation
+ *
+ * On succesfull execution returns newly allocated & initialized insObj,
+ * otherwise returns NULL
  */
 static insObjT
 initIns(const char* srcpath,
@@ -278,6 +435,18 @@ initIns(const char* srcpath,
     return newInsObj;
 }
 
+/* initData()
+ * Initializes Data Object
+ *
+ * @datalen:  Starting size of new dataObj's data tape, on integer type value >0
+ *            allocates that length to tape, on ==0 allocates nothing and relies
+ *            on dynamic allocation (also sets respective flags).
+ * @settings: Original settings that are written into new dataObj, later used to
+ *            restore original state of dataObj on repeated interpretation
+ *
+ * On succesfull execution returns newly allocated & initialized dataObj,
+ * otherwise returns NULL
+ */
 static dataObjT
 initData(size_t datalen,
          settingsT settings){
@@ -303,20 +472,15 @@ initData(size_t datalen,
     return newDataObj;
 }
 
-static stackObjT
-initStack(settingsT settings){
-    stackObjT newStackObj = calloc(1, sizeof(*newStackObj));
-    if (!newStackObj) {
-        fprintf(stderr, cERR "Error allocating stack object!\n" cNO);
-        return NULL;
-    }
-    newStackObj->tape = NULL;
-    newStackObj->flags = settings.flags.stack;
-
-    return newStackObj;
-} 
-
-
+/* initCtx()
+ * Initializes Context Object
+ *
+ * @settings: Original settings that are written into new dataObj, later used to
+ *            restore original state of ctxObj on repeated interpretation
+ *
+ * On succesfull execution returns newly allocated & initialized ctxObj,
+ * otherwise returns NULL
+ */
 static ctxObjT
 initCtx(settingsT settings) {
     ctxObjT newCtxObj = malloc(sizeof(*newCtxObj));
@@ -331,9 +495,23 @@ initCtx(settingsT settings) {
 }
 
 
-/*  TODO 
- *  newCtx: Create context object needed for proper interpretation of BF
+/* TODO 
+ * newCtx()
+ * Creates new context object needed for proper interpretation of BF source
  *
+ * @srcpath:   Filepath of Brainfuck source file, set to NULL if not known or 
+ *             will use @srcstring as a source.
+ * @srcstring: String containing Brainfuck source code, set to NULL if not
+ *             known or will use @srcpath as a source.
+ * @datalen:   Starting size of new dataObj's data tape, on integer type value >0
+ *             allocates that length to tape, on ==0 allocates nothing and relies
+ *             on dynamic allocation (also sets respective flags).
+ * @settings:  Original settings that are written in each subobject and stored
+ *             for later restore to original state on repeated interpretation
+ *
+ * On succesfull execution returns newly allocated & initialized ctxObj with all
+ * of its subobjects (later needs to be freed by freeCtx()), otherwise returns 
+ * NULL and frees the resources.
  */
 ctxObjT
 newCtx(const char* srcpath,
@@ -360,14 +538,8 @@ newCtx(const char* srcpath,
     newCtxObj->data = initData(datalen, *settings);
     if (!newCtxObj->data && datalen > 0) { goto dataCleanup; }
 
-    /* creating stack object */
-    newCtxObj->stack = initStack(*settings);
-    if (!newCtxObj->stack) { goto stackCleanup; }
-
     return newCtxObj;
 
- stackCleanup:
-    free(newCtxObj->data);
  dataCleanup:
     free(newCtxObj->ins);
  insCleanup:
@@ -399,35 +571,28 @@ restoreData(ctxObjT Ctx){
 
     if (dataObj) {
         dataObj->index = 0; 
+        /* Erases memory accesed through interpretation */
         memset(dataObj->tape, DATAMIN, dataObj->usedlen * sizeof(*dataObj->tape));
         dataObj->usedlen = 0;
+        //TODO need to find a way to not overwrite DATA_ALLOW_DYNAMIC_GROW bit
         dataObj->flags = Ctx->settings.flags.data;
     }
 
     return;
 }
 
-static void
-restoreStack(ctxObjT Ctx){
-    if (!isValidCtx(Ctx))
-        return;
-    stackObjT stackObj = Ctx->stack;
-
-    if (stackObj) {
-        memset(stackObj->tape, 0, stackObj->len * sizeof(*stackObj->tape));
-        stackObj->len = 0;
-        stackObj->flags = Ctx->settings.flags.stack;
-    }
-
-    return;
-}
-
+/* restoreCtx()
+ * Used  to restore context object to its original settings (leaving some
+ * settings to be left unchanged - mostly settings that implies from runtime or
+ * arguments passed upon creating the now restored context)
+ *
+ * @Ctx: Context object to be restored
+ */
 static void
 restoreCtx(ctxObjT Ctx){
     if (Ctx) {
         restoreIns(Ctx);
         restoreData(Ctx);
-        restoreStack(Ctx);
 
        //BIT_SET_FALSE(Ctx->flags, CTX_COMPLETED | CTX_RUNNING | CTX_STOPPED);
        Ctx->flags = Ctx->settings.flags.ctx;
@@ -450,6 +615,18 @@ freeIns(insObjT insObj){
     return;
 }
 
+/* bitsetwmask()
+ * Sets bits of @x to @v with exception of true bits in @mask
+ *
+ * @x
+ */
+static int
+bitsetwmask(uint* x, uint v, uint mask){
+    *x = (*x & mask) | (~mask & v);
+
+    return *x;
+}
+
 static void
 freeData(dataObjT dataObj){
     if (dataObj) {
@@ -461,22 +638,13 @@ freeData(dataObjT dataObj){
     return;
 }
 
-static void
-freeStack(stackObjT stackObj){
-    if (stackObj) {
-        stackObj->tape = NULL;
-        free(stackObj);
-    }
-
-    return;
-}
-
-/*TODO
- * freeCtx: Frees memory allocated for tapes
+/* freeCtx()
+ * Frees memory allocated to Ctx and sets subobject pointers to NULL.
  *
- * @tape: Tapes, initialized by initTapes() & initInsSet() to cleanup
+ * @Ctx: context object allocated by newCtx() to be freed.
  */
-void freeCtx(ctxObjT Ctx){
+void
+freeCtx(ctxObjT Ctx){
     /* if already initialized or not cleared */
     if (Ctx){
         /* clean instruction object */
@@ -491,18 +659,16 @@ void freeCtx(ctxObjT Ctx){
             Ctx->data = NULL;
         }
 
-        /* clean stack object */
-        if (Ctx->stack) {
-            freeStack(Ctx->stack);
-            Ctx->stack = NULL;
-        }
         /* clean context object */
         free(Ctx);
     }
 }
 
-
-void printHelp(){
+/* printHelp()
+ * Prints help text with possible options to stdout for user to see.
+ */
+void
+printHelp(){
     const char* helptext = "\
 Name:      BrainFuck C Interpreter\n\
 Usage:     bfci [-h][-t <filepath>][-i <string>]\n\
@@ -515,23 +681,27 @@ Options:\n\
 }
 
 /* DIAGNOSTICS TOOLS */
-static
-void printIns(ctxObjT Ctx){
+static void
+printIns(ctxObjT Ctx){
     if (!isValidCtx(Ctx)){
         return;
     }
 
     for(size_t i = 0; i < Ctx->ins->usedlen; i++){
-        uchar cmdIndex = Ctx->ins->tape[i];
-        printf("%c", insSet[cmdIndex].opcode);
+        uchar cmdIndex = Ctx->ins->tape[i].opIndex;
+        uchar times = Ctx->ins->tape[i].times;
+        if (times > 1)
+            printf("%u%c", times, insSet[cmdIndex].opcode);
+        else
+            printf("%c", insSet[cmdIndex].opcode);
     }
     printf("\n");
 
     return;
 }
 
-static
-void printData(ctxObjT Ctx){
+static void
+printData(ctxObjT Ctx){
     if (!isValidCtx(Ctx)){
         return;
     }
@@ -543,22 +713,12 @@ void printData(ctxObjT Ctx){
     return;
 }
 
-static
-void printStack(ctxObjT Ctx) {
-    if (!isValidCtx(Ctx)){
-        return;
-    }
-
-    for(size_t i = 0; i < Ctx->stack->len; i++){
-        printf("start[%zu] end[%zu]\n", Ctx->stack->tape[i].start, Ctx->stack->tape[i].end);
-    }
-
-    return;
-}
-
-// TODO somehow make these into list of all flags with their str rep and value to just for loop through them
-static
-void printFlags(ctxObjT Ctx){
+// TODO somehow make these into list of all flags with their strrep and value to just for loop through them
+/* printFlags()
+ * Prints the contents of each subobjects flags with respective name of flag.
+ */
+static void
+printFlags(ctxObjT Ctx){
     if (!isValidCtx(Ctx)){
         return;
     }
@@ -566,7 +726,6 @@ void printFlags(ctxObjT Ctx){
     ctxFlagsT   ctxf = Ctx->flags;
     insFlagsT   insf = Ctx->ins->flags;
     dataFlagsT  dataf = Ctx->data->flags;
-    //stackFlagsT stackf = Ctx->stack->flags;
 
     printf("ctx flags: %d\n", ctxf);
     printf("%d CTX_RUNNING\n",                 (ctxf & CTX_RUNNING)              ? 1 : 0);
@@ -591,7 +750,13 @@ void printFlags(ctxObjT Ctx){
     return;
 }
 
-void printCtx(ctxObjT Ctx){
+/* printCtx()
+ * Prints all inside values of context object and its subobjects to stdout
+ *
+ * @Ctx: Object to be exposed
+ */
+void
+printCtx(ctxObjT Ctx){
     if(Ctx){
         printf("\n");
         printf("--Instruction Tape--\n");
@@ -610,76 +775,42 @@ void printCtx(ctxObjT Ctx){
         printf("\n");
 
         printf("\n");
-        printf("--Stack Tape--\n");
-        printf("stack->len = %zu\n", Ctx->stack->len);
-        printStack(Ctx);
-
-        printf("\n");
         printf("--Flags--\n");
         printFlags(Ctx);
     }
 }
 
+/* INTERPRETATION TIME */
 
-static
-bool isBalanced(insObjT insObj){
-    if (!insObj || !insObj->tape) {
-        return TRUE;
-    }
-
-    size_t currindex = insObj->index;
-    long int count = 0;
-
-    /* if count gets below zero, closing bracket was used without pair opening bracket */
-    while (count >= 0 && currindex < insObj->usedlen){
-        switch (insObj->tape[currindex]){
-            case OPC_WHILE: 
-                count++;
-                break;
-
-            case OPC_DO:
-                count--;
-                break;
-        }
-
-        currindex++;
-    }
-
-    /* balanced brackets will set count to 0, more opening brackets would leave count>0 */
-    return (count == 0) ? TRUE : FALSE;
-}
-
-
-/* TODO
- * execIns: Takes care of executing the right instruction
- *          Executes one instruction at Ctx->ins->index
+/* execIns()
+ * Takes care of executing the right operation for given instruction at
+ * instruction index.
+ * Executes one instruction at Ctx->ins->index
  *
- * @tape: Tape structure of which one instruction tape will be executed
+ * @Ctx: VALID! context object from which will be executed current instruction.
+ *
+ * Returns retrun value of a command associated with instruction.
  */
 static int
 execIns(ctxObjT Ctx){
-    if (!isValidCtx(Ctx)){
-        return FAIL;
-    }
 
-    uchar currIns = Ctx->ins->tape[Ctx->ins->index];
-    cmdT currCMD = insSet[currIns].command;
+    uchar currOPIndex = Ctx->ins->tape[Ctx->ins->index].opIndex;
+    cmdT currCMD = insSet[currOPIndex].command;
 
     return currCMD(Ctx);
 }
 
+// TODO add handling of overflows, underflows (flags in general) before incrementing
 /* incPC()
+ * Increment programm counter, in other words: fancier Ctx->ins->index++
  *
- * Increment programm counter, in other words Ctx->ins->index
+ * @Ctx: VALID! context object which programm counter will be incremented.
  *
- * Return True if there are possibly more instructions to execute, False if
- * there are no more
+ * Returns true if there are possibly more instructions to execute, false if
+ * there are no more.
  */
 static bool
 incPC(ctxObjT Ctx){
-    if (!isValidCtx(Ctx))
-        return false;
-
     /* dont increment if we previously jumped on current instruction */
     if (Ctx->ins->flags & INS_JUMPED) {
         FLAG_SET_FALSE(Ctx->ins->flags, INS_JUMPED);
@@ -695,29 +826,47 @@ incPC(ctxObjT Ctx){
     return false;
 }
 
+/* execCtx()
+ * Executes all instructins on @Ctx's instruction tape
+ *
+ * @Ctx: Context to be executed
+ *
+ * Returns SUCCESS if every instruction goes fine and dandy, otherwise stops
+ * and returns FAIL.
+ */
 static int
 execCtx(ctxObjT Ctx){
-    if (!isValidCtx(Ctx)){
-        return FAIL; 
-    }
-
     int retval = SUCCESS;
+    insObjT insObj = Ctx->ins;
 
     do {
-        retval = execIns(Ctx);
-        if (retval == FAIL) return FAIL;
+        uint times = insObj->tape[insObj->index].times;
+        for(; times > 0; times--) {
+            retval = execIns(Ctx);
+            if (retval == FAIL) return FAIL;
+        }
     } while (incPC(Ctx));
 
     return SUCCESS;
 }
 
+/* interpret()
+ * Takes care of correct interpretation of initialized context ready to run
+ *
+ * @Ctx: context object to interpret
+ *
+ * Returns SUCCESS on FAIL-less execution, otherwise returns specific error
+ * definition of value <0
+ */
 int
 interpret(ctxObjT Ctx){
+    int retval;
+
     if (!isValidCtx(Ctx)){
         return FAIL; 
     }
     
-    // before interpretation
+    // before execution
     if (Ctx->flags & (CTX_COMPLETED | CTX_RUNNING | CTX_STOPPED)) {
         restoreCtx(Ctx);
     }
@@ -730,6 +879,7 @@ interpret(ctxObjT Ctx){
         }
     }
     */
+
     if (!canBeExecutedCtx(Ctx)){
         fprintf(stderr, cERR "ERROR: Context is not ready for execution!\n" cNO);
         return FAIL; 
@@ -742,16 +892,16 @@ interpret(ctxObjT Ctx){
     }
     BIT_SET_TRUE(Ctx->flags, CTX_RUNNING);
 
-    // interpretation
-    execCtx(Ctx);
+    // execution cycle
+    retval = execCtx(Ctx);
     
-    // after interpretation
+    // after execution
     BIT_SET_TRUE(Ctx->flags, CTX_COMPLETED);
     BIT_SET_FALSE(Ctx->flags, CTX_RUNNING);
 
     if (Ctx->flags & DEBUG_PRINT_DIAGNOSTICS)
         printCtx(Ctx);
 
-    return SUCCESS;
+    return retval;
 }
 

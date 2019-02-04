@@ -1,15 +1,17 @@
 PROGRAM = bfci # name of executable
 CC = gcc # compiler used: gcc
 MAINSRC = main.c # main source file, in most cases main.c
-SRCS = funcs.c # .c files containing funcs
+SRCS = bfci.c insset.c inssetf.c presets.c # .c files containing funcs
 HEADERS = bfci.h tcolors.h # .h files
 
-CFLAGS = -O0 -ggdb -Wall #-Werror
+TESTFILE = testsrcs/beer.bf
+
+CFLAGS = -O0 -ggdb -Wall -pg #-Werror
 
 # 'make' or 'make all' compiles executable
 # 'make clean' - removes files produced mid compiling
 
-.PHONY: all clean cls
+.PHONY: all clean cls perftest
 #====NO TOUCHIE TOUCHIE BELOW THIS LINE====#
 
 OBJS = ${SRCS:.c=.o} $(MAINSRC:.c=.o)
@@ -24,3 +26,6 @@ $(PROGRAM): $(OBJS)
 
 clean cls:
 	rm -f  $(PROGRAM) $(OBJS)
+
+perftest:
+	./$(PROGRAM) -t $(TESTFILE) | gprof bfci gmon.out > perftest.txt
